@@ -1,12 +1,16 @@
-import { Hono } from 'hono';
+import { createApp } from './app';
 import type { Env } from './env';
+import { loadUser, sameOrigin } from './lib/http';
+import { auth } from './routes/auth';
+import { designs } from './routes/designs';
+import { share } from './routes/share';
 
 /**
  * API-Worker. Rechnet bewusst nichts Physikalisches (Free Plan: 10 ms CPU pro Request).
  * Alle Requests außerhalb von `/api/*` und `/v/*` liefert Cloudflare direkt als Static Assets aus,
  * ohne diesen Worker aufzurufen (siehe `assets.run_worker_first` in `wrangler.jsonc`).
  */
-const app = new Hono<{ Bindings: Env }>();
+const app = createApp();
 
 app.get('/api/health', async (c) => {
   let database: 'ok' | 'error' = 'ok';
@@ -15,16 +19,23 @@ app.get('/api/health', async (c) => {
   } catch {
     database = 'error';
   }
-  return c.json({ status: 'ok', environment: c.env.ENVIRONMENT, database }, 200, {
-    'Cache-Control': 'no-store',
-  });
+  return c.json(
+    { status: 'ok', environment: c.env.ENVIRONMENT, database, auth: !!c.env.SESSION_SECRET },
+    200,
+    {
+      'Cache-Control': 'no-store',
+    },
+  );
 });
 
+app.use('/api/*', sameOrigin, loadUser);
+app.route('/', auth);
+app.route('/', designs);
+app.route('/', share);
+
 app.notFound((c) => {
-  // Share-Seiten (`/v/:id`) bekommen später Open-Graph-Tags; bis dahin die SPA ausliefern.
-  if (new URL(c.req.url).pathname.startsWith('/v/')) {
+  if (new URL(c.req.url).pathname.startsWith('/v/'))
     return c.env.ASSETS.fetch(new URL('/', c.req.url));
-  }
   return c.json({ error: 'not_found' }, 404);
 });
 

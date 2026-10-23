@@ -16,6 +16,8 @@ interface Props {
   history: { canUndo: boolean; canRedo: boolean; undo: () => void; redo: () => void };
   saveState: 'saved' | 'saving' | 'invalid';
   toolbar?: ReactNode;
+  /** Zusätzliche Aktionen rechts in der Leiste (z. B. Cloud). */
+  actions?: ReactNode;
   center: ReactNode;
   params: ReactNode;
 }
@@ -30,6 +32,7 @@ export function DesignerShell({
   history,
   saveState,
   toolbar,
+  actions,
   center,
   params,
 }: Props) {
@@ -77,6 +80,7 @@ export function DesignerShell({
         />
         {toolbar}
         <div className="spacer" />
+        {actions}
         <button
           type="button"
           className="btn small ghost"
