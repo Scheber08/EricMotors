@@ -79,7 +79,7 @@ export function massProperties(car: Car, g: CarGeometry, engine: EngineAnalysis)
   const openTop = model.shape === 'roadster' ? 1.1 : 1;
   add(
     'chassis',
-    22 * vol * chassisType * chassisMat * openTop,
+    25 * vol * chassisType * chassisMat * openTop,
     centerX,
     g.rideHeight + 0.3 * g.height,
   );
@@ -101,7 +101,7 @@ export function massProperties(car: Car, g: CarGeometry, engine: EngineAnalysis)
     fibreglass: 0.7,
     cfrp: 0.45,
   }[trim.bodyMaterial];
-  add('body', 10 * vol * shapeBody * panelMat, centerX, g.rideHeight + 0.55 * g.height);
+  add('body', 11 * vol * shapeBody * panelMat, centerX, g.rideHeight + 0.55 * g.height);
   add('glass', (25 + 3 * vol) * (model.shape === 'roadster' ? 0.5 : 1), cabinX, 0.8 * g.height);
 
   // Motor und Antriebsstrang
