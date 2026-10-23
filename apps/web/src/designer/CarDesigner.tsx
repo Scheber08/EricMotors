@@ -19,6 +19,8 @@ import { type DocSummary, garage, newId } from '../storage/db';
 import { formatQuantity, unitFor } from '../units/format';
 import { useCarAnalysis } from '../workers/usePhysics';
 import { Chart } from './Chart';
+import { CloudPanel } from './CloudPanel';
+import { captureViewer } from './thumbnail';
 import { DesignerShell, type SectionDef } from './DesignerShell';
 import { normalizeCar, setGearCount } from './carNormalize';
 import type { ViewMode } from './car/CarViewer';
@@ -126,6 +128,26 @@ export function CarDesigner({ id }: { id: string }) {
       onSelect={(s) => setSection(s as Section)}
       history={history}
       saveState={valid ? saveState : 'invalid'}
+      actions={
+        <CloudPanel
+          kind="car"
+          doc={car}
+          blocked={
+            !valid || (analysis.result?.warnings.some((w) => w.severity === 'error') ?? true)
+          }
+          stats={
+            analysis.result && {
+              powerW: analysis.result.engine.curve.peakPower.power,
+              torqueNm: analysis.result.engine.curve.peakTorque.torque,
+              massKg: analysis.result.mass.total,
+              accelS: analysis.result.performance.accel0to100,
+              topSpeedMs: analysis.result.performance.topSpeed,
+              costEur: analysis.result.cost.total,
+            }
+          }
+          thumbnail={() => captureViewer(document.querySelector('.viewer'))}
+        />
+      }
       center={
         <div className="car-center">
           <div className="viewer">
