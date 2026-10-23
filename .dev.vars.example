@@ -5,6 +5,9 @@
 # Signaturschlüssel für Session-Cookies (lokal beliebig, z. B. `openssl rand -hex 32`)
 SESSION_SECRET=
 
+# Lokal als Entwicklungsumgebung kennzeichnen (überschreibt `vars.ENVIRONMENT`)
+ENVIRONMENT=development
+
 # OAuth (ab Phase 2)
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
