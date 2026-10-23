@@ -6,3 +6,5 @@ export * from './primitives';
 export * from './units';
 export * from './engine';
 export * from './car';
+export * from './migrate';
+export * from './templates';
