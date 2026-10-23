@@ -63,9 +63,10 @@ describe('Auto: Referenzfahrzeuge', () => {
   it('Ratings liegen in 0..100 und ergeben ein stimmiges Profil', () => {
     const roadster = analyze('light-roadster').ratings;
     const wagon = analyze('diesel-wagon').ratings;
-    for (const r of [roadster, wagon])
-      for (const v of Object.values(r)) expect(v).toBeGreaterThanOrEqual(0);
-    expect(v).toBeLessThanOrEqual(100);
+    for (const v of [...Object.values(roadster), ...Object.values(wagon)]) {
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThanOrEqual(100);
+    }
     expect(roadster.sportiness).toBeGreaterThan(wagon.sportiness);
     expect(wagon.practicality).toBeGreaterThan(roadster.practicality);
     expect(wagon.utility).toBeGreaterThan(roadster.utility);
