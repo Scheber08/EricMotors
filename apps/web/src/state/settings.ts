@@ -22,7 +22,7 @@ function initial(): Settings {
   const defaults: Settings = {
     language: browserLanguage,
     units: 'metric',
-    power: 'PS',
+    power: browserLanguage === 'de' ? 'PS' : 'hp',
     mode: 'beginner',
     theme: 'system',
   };

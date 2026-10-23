@@ -408,6 +408,8 @@ export const deCar = {
     editEngine: 'Motor bearbeiten',
     updateEngine: 'Auf neuen Stand aktualisieren',
     chooseEngine: 'Motor wählen',
+    adoptEngine: 'In Motor-Bibliothek übernehmen',
+    engineOf: 'Motor von {name}',
     massBreakdown: 'Massenbilanz',
   },
 };

@@ -400,6 +400,8 @@ export const enCar = {
     editEngine: 'Edit engine',
     updateEngine: 'Update to latest version',
     chooseEngine: 'Choose engine',
+    adoptEngine: 'Add to engine library',
+    engineOf: 'Engine of {name}',
     massBreakdown: 'Mass breakdown',
   },
 };

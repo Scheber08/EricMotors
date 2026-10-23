@@ -15,7 +15,7 @@ import { useLocale, useT } from '../i18n';
 import { setPath } from '../lib/path';
 import { useCarDocument, useHistory } from '../state/document';
 import { useSettings } from '../state/settings';
-import { type DocSummary, garage } from '../storage/db';
+import { type DocSummary, garage, newId } from '../storage/db';
 import { formatQuantity, unitFor } from '../units/format';
 import { useCarAnalysis } from '../workers/usePhysics';
 import { Chart } from './Chart';
@@ -603,6 +603,29 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
     }
   };
   const libraryVariant = selected?.variants.find((v) => v.id === car.engine.source?.variantId);
+  const fam = car.engine.family;
+  const liters = (
+    (Math.PI / 4) *
+    car.engine.variant.bore ** 2 *
+    car.engine.variant.stroke *
+    fam.cylinders *
+    1000
+  ).toFixed(1);
+  const summary = `${t(`options.params.engine.layout.${fam.layout}`)}${fam.cylinders} · ${liters} l · ${car.engine.variant.name}`;
+  const adopt = async () => {
+    const engine: Engine = {
+      schemaVersion: 1,
+      kind: 'engine',
+      id: newId(),
+      meta: { name: t('designer.engineOf', { name: car.meta.name }), description: '', tags: [] },
+      family: structuredClone(car.engine.family),
+      variants: [structuredClone(car.engine.variant)],
+    };
+    await garage.saveEngine(engine);
+    setSelected(engine);
+    setLibrary(await garage.listEngines());
+    update((d) => (d.engine.source = { engineId: engine.id, variantId: engine.variants[0]!.id }));
+  };
   const outdated =
     !!libraryVariant && JSON.stringify(libraryVariant) !== JSON.stringify(car.engine.variant);
 
@@ -610,7 +633,12 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
     <FieldGroup title={t('sections.car.engine')}>
       <div className="engine-summary card">
         <strong>{selected?.meta.name ?? t('designer.embeddedEngine')}</strong>
-        <span className="muted">{car.engine.variant.name}</span>
+        <span className="muted">{summary}</span>
+        {!selected && (
+          <button type="button" className="btn small" onClick={() => void adopt()}>
+            {t('designer.adoptEngine')}
+          </button>
+        )}
         {car.engine.source && selected && (
           <Link className="btn small" href={`/engine/${selected.id}`}>
             {t('designer.editEngine')}
