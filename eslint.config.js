@@ -17,4 +17,8 @@ export default tseslint.config(
     files: ['apps/api/**/*.ts'],
     languageOptions: { globals: globals.serviceworker },
   },
+  {
+    files: ['**/scripts/**/*.mjs'],
+    languageOptions: { globals: globals.node },
+  },
 );
