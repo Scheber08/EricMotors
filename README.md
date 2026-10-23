@@ -9,7 +9,7 @@ Eine physikalische Simulation folgt in einer späteren Phase.
 
 Live: <https://car.scheber.com>
 
-> Status: Phase 1 (MVP). Architektur und Phasenplan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> Status: Phase 2 (Community). Architektur und Phasenplan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 > Berechnungsmodelle und Quellen: [`docs/MODELS.md`](docs/MODELS.md).
 
 ## Funktionen (Phase 1)
@@ -29,6 +29,14 @@ spielnah, aber mit plausiblen Formeln und echten Einheiten.
   9 Ratings und Kompatibilitätsprüfungen. Röntgen- und Explosionsansicht, anklickbare Bauteile.
 - Einsteiger- und Ingenieur-Modus, Undo/Redo, metrisch/imperial, kW/PS/hp, Deutsch/Englisch,
   Dark Mode, lokale Garage (IndexedDB) ohne Konto.
+
+## Community (Phase 2)
+
+- Konto mit Benutzername und Passwort (keine E-Mail; Passwort wird im Browser gestreckt).
+- Autos und Motoren in der Cloud speichern: privat, nicht gelistet oder öffentlich; Vorschaubild
+  aus der 3D-Ansicht.
+- Galerie mit Filtern, Detailseite mit 3D-Ansicht und Datenblatt, Profilseiten.
+- Likes, Melden, „Als Vorlage übernehmen“ mit Herkunftsangabe, Teilen-Links mit Link-Vorschau.
 
 ## Aufbau
 
