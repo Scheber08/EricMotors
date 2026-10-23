@@ -9,8 +9,26 @@ Eine physikalische Simulation folgt in einer späteren Phase.
 
 Live: <https://car.scheber.com>
 
-> Status: Phase 0 (Grundgerüst). Architektur und Phasenplan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-> Physikalische Modelle und Quellen: [`docs/MODELS.md`](docs/MODELS.md).
+> Status: Phase 1 (MVP). Architektur und Phasenplan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> Berechnungsmodelle und Quellen: [`docs/MODELS.md`](docs/MODELS.md).
+
+## Funktionen (Phase 1)
+
+Bedienung und Rechenlogik sind an _Automation – The Car Company Tycoon Game_ angelehnt:
+spielnah, aber mit plausiblen Formeln und echten Einheiten.
+
+- **Motor-Designer:** Block (Bauart, Zylinder, Werkstoffe, Ventiltrieb), Kurbeltrieb, Zylinderkopf,
+  Aufladung (Turbo, Kompressor), Gemischaufbereitung, Abgasanlage, Abstimmung; mehrere Varianten
+  je Motorfamilie. Live: Drehmoment-, Leistungs- und Ladedruckkurve, Masse, Kosten, Ratings
+  (Laufruhe, Zuverlässigkeit, Emissionen, Ansprechverhalten, Sparsamkeit) und Warnungen mit
+  Lösungsvorschlag.
+- **Auto-Designer:** parametrische 3D-Karosserie (8 Grundformen, Form-Regler), Lack (Uni, Metallic,
+  Perleffekt, Matt, Chrom, Mehrfarbig, Folie), Chassis, Motor aus der eigenen Bibliothek, Ausstattung,
+  Antrieb und Getriebe, Fahrwerk, Räder, Bremsen, Aerodynamik. Live: 0–100 km/h,
+  Höchstgeschwindigkeit, Bremsweg, Querbeschleunigung, Verbrauch, CO₂, Kosten, Zugkraftdiagramm,
+  9 Ratings und Kompatibilitätsprüfungen. Röntgen- und Explosionsansicht, anklickbare Bauteile.
+- Einsteiger- und Ingenieur-Modus, Undo/Redo, metrisch/imperial, kW/PS/hp, Deutsch/Englisch,
+  Dark Mode, lokale Garage (IndexedDB) ohne Konto.
 
 ## Aufbau
 
