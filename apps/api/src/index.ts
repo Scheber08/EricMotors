@@ -15,11 +15,9 @@ app.get('/api/health', async (c) => {
   } catch {
     database = 'error';
   }
-  return c.json(
-    { status: 'ok', environment: c.env.ENVIRONMENT, database },
-    200,
-    { 'Cache-Control': 'no-store' },
-  );
+  return c.json({ status: 'ok', environment: c.env.ENVIRONMENT, database }, 200, {
+    'Cache-Control': 'no-store',
+  });
 });
 
 app.notFound((c) => {

@@ -5,13 +5,13 @@ nachgezogen (Abschnitt „Entscheidungslog“ am Ende).
 
 ## 1. Leitplanken
 
-| Prinzip | Konsequenz in der Architektur |
-| --- | --- |
-| Ingenieursnah | Jedes Bauteil über physikalische Parameter (SI). Modelle mit Literaturquelle im Code und in [`MODELS.md`](MODELS.md). Näherungen geben Gültigkeitsbereich und Unsicherheit mit aus. |
-| Eine Quelle der Wahrheit | Gespeichert werden **nur Eingabeparameter**. Masse, Schwerpunkt, Leistungskurven usw. berechnet `@ericmotors/physics` deterministisch. Ausnahme: explizite *Overrides* (z. B. gemessene Masse, cw aus externer CFD) sind selbst Eingaben und als solche markiert. |
-| Alles rechnet im Browser | Physik in Web Workern, 3D in WebGL. Der Cloudflare Worker rechnet **nichts** Physikalisches. |
-| Simulationstauglich | `Vehicle` → `toSimulationInput()` ist eine reine Funktion. Die spätere Simulation konsumiert nur `SimulationInput`. |
-| Free Plan dauerhaft | Siehe Abschnitt 3: Budget pro aktivem Nutzer, Caching, keine Schreibzugriffe pro Seitenaufruf. |
+| Prinzip                  | Konsequenz in der Architektur                                                                                                                                                                                                                                     |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ingenieursnah            | Jedes Bauteil über physikalische Parameter (SI). Modelle mit Literaturquelle im Code und in [`MODELS.md`](MODELS.md). Näherungen geben Gültigkeitsbereich und Unsicherheit mit aus.                                                                               |
+| Eine Quelle der Wahrheit | Gespeichert werden **nur Eingabeparameter**. Masse, Schwerpunkt, Leistungskurven usw. berechnet `@ericmotors/physics` deterministisch. Ausnahme: explizite _Overrides_ (z. B. gemessene Masse, cw aus externer CFD) sind selbst Eingaben und als solche markiert. |
+| Alles rechnet im Browser | Physik in Web Workern, 3D in WebGL. Der Cloudflare Worker rechnet **nichts** Physikalisches.                                                                                                                                                                      |
+| Simulationstauglich      | `Vehicle` → `toSimulationInput()` ist eine reine Funktion. Die spätere Simulation konsumiert nur `SimulationInput`.                                                                                                                                               |
+| Free Plan dauerhaft      | Siehe Abschnitt 3: Budget pro aktivem Nutzer, Caching, keine Schreibzugriffe pro Seitenaufruf.                                                                                                                                                                    |
 
 ## 2. Free-Plan-Limits (geprüft am 2026-10-23)
 
@@ -19,27 +19,27 @@ Quelle: offizielle Doku (`developers.cloudflare.com`, Quelltext `cloudflare/clou
 `production`): `workers/platform/limits`, `d1/platform/limits`, `workers/d1-pricing`, `r2/pricing`,
 `workers/ci-cd/builds/limits-and-pricing`, `workers/static-assets/billing-and-limitations`, `workers/previews`.
 
-| Ressource | Free-Limit | Relevanz |
-| --- | --- | --- |
-| Worker-Requests | 100 000 / Tag (Reset 00:00 UTC) | Haupt-Engpass, nur API- und Share-Requests zählen |
-| Static-Asset-Requests | frei, unbegrenzt | SPA, 3D-Assets, Fonts |
-| CPU-Zeit | 10 ms / Request | Keine Physik, kein Passwort-Hashing, kleine JSON-Validierung |
-| Subrequests (inkl. D1/R2) | 50 / Request | ≤ 5 pro Endpoint angestrebt |
-| Speicher | 128 MB / Isolate | unkritisch |
-| Worker-Größe | 64 MiB unkomprimiert | Bundle-Ziel < 200 KB |
-| Static Assets | 20 000 Dateien, je ≤ 25 MiB | 3D-Baukasten-Teile müssen in diese Grenze passen |
-| D1 Datenbankgröße | 500 MB / DB, 5 GB / Account, 10 DBs | Nur Metadaten in D1 |
-| D1 Rows read | 5 Mio / Tag | Indizes auf allen Filter- und Sortierspalten |
-| D1 Rows written | 100 000 / Tag | Kein View-Counter, Likes über Zähler plus Tabelle |
-| D1 Queries / Invocation | 50 | unkritisch |
-| D1 Zeile / String | ≤ 2 MB | Fahrzeugdaten gehören nach R2 |
-| R2 Speicher | 10 GB-Monat | ~50 KB pro Fahrzeug inkl. Thumbnail |
-| R2 Class A (Put, List) | 1 Mio / Monat | Cloud-Speichern nur explizit, nie Autosave in die Cloud |
-| R2 Class B (Get, Head) | 10 Mio / Monat | durch Cache API abgefedert |
-| R2 Egress | frei | – |
-| Rate-Limiting-Binding | Perioden 10 s oder 60 s, pro Standort approximativ | Schutz der Schreib-Endpoints |
-| Workers Builds | 3 000 Build-Minuten / Monat, 1 parallel, 20 min Timeout | Build schlank halten (~2 min) |
-| Previews | 100 pro Worker, 100 Deployments pro Preview | Pro Branch eine Preview-URL |
+| Ressource                 | Free-Limit                                              | Relevanz                                                     |
+| ------------------------- | ------------------------------------------------------- | ------------------------------------------------------------ |
+| Worker-Requests           | 100 000 / Tag (Reset 00:00 UTC)                         | Haupt-Engpass, nur API- und Share-Requests zählen            |
+| Static-Asset-Requests     | frei, unbegrenzt                                        | SPA, 3D-Assets, Fonts                                        |
+| CPU-Zeit                  | 10 ms / Request                                         | Keine Physik, kein Passwort-Hashing, kleine JSON-Validierung |
+| Subrequests (inkl. D1/R2) | 50 / Request                                            | ≤ 5 pro Endpoint angestrebt                                  |
+| Speicher                  | 128 MB / Isolate                                        | unkritisch                                                   |
+| Worker-Größe              | 64 MiB unkomprimiert                                    | Bundle-Ziel < 200 KB                                         |
+| Static Assets             | 20 000 Dateien, je ≤ 25 MiB                             | 3D-Baukasten-Teile müssen in diese Grenze passen             |
+| D1 Datenbankgröße         | 500 MB / DB, 5 GB / Account, 10 DBs                     | Nur Metadaten in D1                                          |
+| D1 Rows read              | 5 Mio / Tag                                             | Indizes auf allen Filter- und Sortierspalten                 |
+| D1 Rows written           | 100 000 / Tag                                           | Kein View-Counter, Likes über Zähler plus Tabelle            |
+| D1 Queries / Invocation   | 50                                                      | unkritisch                                                   |
+| D1 Zeile / String         | ≤ 2 MB                                                  | Fahrzeugdaten gehören nach R2                                |
+| R2 Speicher               | 10 GB-Monat                                             | ~50 KB pro Fahrzeug inkl. Thumbnail                          |
+| R2 Class A (Put, List)    | 1 Mio / Monat                                           | Cloud-Speichern nur explizit, nie Autosave in die Cloud      |
+| R2 Class B (Get, Head)    | 10 Mio / Monat                                          | durch Cache API abgefedert                                   |
+| R2 Egress                 | frei                                                    | –                                                            |
+| Rate-Limiting-Binding     | Perioden 10 s oder 60 s, pro Standort approximativ      | Schutz der Schreib-Endpoints                                 |
+| Workers Builds            | 3 000 Build-Minuten / Monat, 1 parallel, 20 min Timeout | Build schlank halten (~2 min)                                |
+| Previews                  | 100 pro Worker, 100 Deployments pro Preview             | Pro Branch eine Preview-URL                                  |
 
 > Hinweis: Requests, die per `run_worker_first` zwingend den Worker treffen, bekommen nach
 > Erreichen des Tageslimits **429** statt Fallback auf Static Assets. Deshalb laufen nur `/api/*`
@@ -49,25 +49,25 @@ Quelle: offizielle Doku (`developers.cloudflare.com`, Quelltext `cloudflare/clou
 
 Annahmen für einen „aktiven Nutzer“ (konservativ, eher hoch gegriffen):
 
-| Aktion | Anzahl | Worker-Req | D1 read | D1 write | R2 A | R2 B |
-| --- | --- | --- | --- | --- | --- | --- |
-| Session prüfen (`/api/me`) | 2 | 2 | 2 | 0 | 0 | 0 |
-| Garage laden | 2 | 2 | 2 × 25 | 0 | 0 | 0 |
-| Cloud-Speichern (Daten + Thumbnail) | 3 | 3 | 3 × 2 | 3 × 4 | 3 × 2 | 0 |
-| Galerie-Seiten (30 % Cache-Miss) | 10 | 10 | 3 × 30 | 0 | 0 | 0 |
-| Fahrzeug ansehen (50 % Cache-Miss) | 10 | 10 | 5 × 1 | 0 | 0 | 5 |
-| Likes | 5 | 5 | 5 | 5 × 3 | 0 | 0 |
-| **Summe** | | **≈ 32** | **≈ 160** | **≈ 27** | **6** | **5** |
+| Aktion                              | Anzahl | Worker-Req | D1 read   | D1 write | R2 A  | R2 B  |
+| ----------------------------------- | ------ | ---------- | --------- | -------- | ----- | ----- |
+| Session prüfen (`/api/me`)          | 2      | 2          | 2         | 0        | 0     | 0     |
+| Garage laden                        | 2      | 2          | 2 × 25    | 0        | 0     | 0     |
+| Cloud-Speichern (Daten + Thumbnail) | 3      | 3          | 3 × 2     | 3 × 4    | 3 × 2 | 0     |
+| Galerie-Seiten (30 % Cache-Miss)    | 10     | 10         | 3 × 30    | 0        | 0     | 0     |
+| Fahrzeug ansehen (50 % Cache-Miss)  | 10     | 10         | 5 × 1     | 0        | 0     | 5     |
+| Likes                               | 5      | 5          | 5         | 5 × 3    | 0     | 0     |
+| **Summe**                           |        | **≈ 32**   | **≈ 160** | **≈ 27** | **6** | **5** |
 
 Daraus die tragbare Zahl täglich aktiver Nutzer (DAU):
 
-| Limit | Rechnung | DAU |
-| --- | --- | --- |
-| Worker-Requests | 100 000 / 32 | **≈ 3 100** (Engpass) |
-| D1 rows written | 100 000 / 27 | ≈ 3 700 |
-| D1 rows read | 5 000 000 / 160 | ≈ 31 000 |
-| R2 Class A | 1 000 000 / 30 / 6 | ≈ 5 500 |
-| R2 Class B | 10 000 000 / 30 / 5 | ≈ 66 000 |
+| Limit           | Rechnung            | DAU                   |
+| --------------- | ------------------- | --------------------- |
+| Worker-Requests | 100 000 / 32        | **≈ 3 100** (Engpass) |
+| D1 rows written | 100 000 / 27        | ≈ 3 700               |
+| D1 rows read    | 5 000 000 / 160     | ≈ 31 000              |
+| R2 Class A      | 1 000 000 / 30 / 6  | ≈ 5 500               |
+| R2 Class B      | 10 000 000 / 30 / 5 | ≈ 66 000              |
 
 Speicher: ~20 KB gzip-JSON + ~25 KB WebP-Thumbnail pro Fahrzeug → 10 GB R2 ≈ 200 000 Fahrzeuge.
 D1: ~1,5 KB pro Fahrzeug inkl. Indizes → 500 MB ≈ 300 000 Fahrzeuge. Limit pro Nutzer: 50 Fahrzeuge
@@ -79,22 +79,22 @@ heute ausgelastet, dein Fahrzeug ist lokal gesichert“) übersetzt.
 
 ## 4. Tech-Stack
 
-| Bereich | Wahl | Begründung |
-| --- | --- | --- |
-| Sprache | TypeScript (strict) | gemeinsame Typen Frontend/Worker/Physik |
-| Frontend | React 19 + Vite | wie vorgeschlagen |
-| 3D | three.js, React Three Fiber, drei | wie vorgeschlagen; Assets als GLB (Meshopt), KTX2 |
-| State | **Zustand + zundo** (Undo/Redo) | ~3 KB, ohne Boilerplate; Undo/Redo als Middleware über den Eingabe-Zustand. Redux Toolkit wäre schwerer, ohne Mehrwert hier |
-| Schema | Zod 4 | ein versioniertes Schema für Frontend und Worker; Migrationen als reine Funktionen |
-| Physik | eigenes Paket, reine Funktionen, Vitest | läuft im Web Worker (Comlink-artiger Mini-RPC ohne Abhängigkeit); später WASM möglich |
-| Diagramme | uPlot | ~45 KB, sehr schnell bei Kennfeldern; Recharts wäre deutlich schwerer |
-| i18n | eigenes leichtes Wörterbuch (de/en) | keine schwere Bibliothek nötig |
-| Backend | Cloudflare Worker + Hono | Hono ~15 KB, schneller Router |
-| Daten | D1 (Metadaten), R2 (Fahrzeug-JSON gzip, Thumbnails) | siehe Limits |
-| Auth | OAuth GitHub + Google, Session als HMAC-signiertes Cookie (WebCrypto) | kein Passwort-Hashing, CPU-billig |
-| Hosting | **ein** Worker mit Static Assets | SPA statisch, API unter `/api`, Share-Seiten unter `/v/:id` |
-| Previews | Cloudflare *Worker Previews* (`wrangler preview`, `previews`-Block) | pro Branch eigene URL, eigene Preview-D1 und Preview-R2 |
-| CI | GitHub Actions: Lint, Typecheck, Test, Build | Deployment macht Cloudflare |
+| Bereich   | Wahl                                                                  | Begründung                                                                                                                  |
+| --------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Sprache   | TypeScript (strict)                                                   | gemeinsame Typen Frontend/Worker/Physik                                                                                     |
+| Frontend  | React 19 + Vite                                                       | wie vorgeschlagen                                                                                                           |
+| 3D        | three.js, React Three Fiber, drei                                     | wie vorgeschlagen; Assets als GLB (Meshopt), KTX2                                                                           |
+| State     | **Zustand + zundo** (Undo/Redo)                                       | ~3 KB, ohne Boilerplate; Undo/Redo als Middleware über den Eingabe-Zustand. Redux Toolkit wäre schwerer, ohne Mehrwert hier |
+| Schema    | Zod 4                                                                 | ein versioniertes Schema für Frontend und Worker; Migrationen als reine Funktionen                                          |
+| Physik    | eigenes Paket, reine Funktionen, Vitest                               | läuft im Web Worker (Comlink-artiger Mini-RPC ohne Abhängigkeit); später WASM möglich                                       |
+| Diagramme | uPlot                                                                 | ~45 KB, sehr schnell bei Kennfeldern; Recharts wäre deutlich schwerer                                                       |
+| i18n      | eigenes leichtes Wörterbuch (de/en)                                   | keine schwere Bibliothek nötig                                                                                              |
+| Backend   | Cloudflare Worker + Hono                                              | Hono ~15 KB, schneller Router                                                                                               |
+| Daten     | D1 (Metadaten), R2 (Fahrzeug-JSON gzip, Thumbnails)                   | siehe Limits                                                                                                                |
+| Auth      | OAuth GitHub + Google, Session als HMAC-signiertes Cookie (WebCrypto) | kein Passwort-Hashing, CPU-billig                                                                                           |
+| Hosting   | **ein** Worker mit Static Assets                                      | SPA statisch, API unter `/api`, Share-Seiten unter `/v/:id`                                                                 |
+| Previews  | Cloudflare _Worker Previews_ (`wrangler preview`, `previews`-Block)   | pro Branch eigene URL, eigene Preview-D1 und Preview-R2                                                                     |
+| CI        | GitHub Actions: Lint, Typecheck, Test, Build                          | Deployment macht Cloudflare                                                                                                 |
 
 ## 5. Repository-Struktur (npm Workspaces)
 
@@ -243,49 +243,49 @@ R2-Schlüssel: `vehicles/{id}/v{n}.json.gz`, `thumbs/{id}/{n}.webp`.
 
 ## 8. API (Worker)
 
-| Methode | Pfad | Cache | Zweck |
-| --- | --- | --- | --- |
-| GET | `/api/health` | – | Deployment-Check |
-| GET | `/api/auth/:provider/login`, `/callback` | – | OAuth |
-| POST | `/api/auth/logout` | – | Session löschen |
-| GET | `/api/me` | privat | Nutzer + Kontingent |
-| GET | `/api/vehicles?mine=1` | privat | Garage |
-| PUT | `/api/vehicles/:id` | – | Speichern (Zod-Validierung, ≤ 512 KB) |
-| PUT | `/api/vehicles/:id/thumb` | – | Thumbnail (WebP ≤ 100 KB) |
-| DELETE | `/api/vehicles/:id` | – | Löschen |
-| GET | `/api/vehicles/:id` | Cache API 5 min (öffentlich) | Metadaten |
-| GET | `/api/vehicles/:id/data` | immutable (versionierter Key) | Fahrzeug-JSON |
-| GET | `/api/gallery?filter…&cursor` | Cache API 60 s | Galerie |
-| POST/DELETE | `/api/vehicles/:id/like` | – | Likes |
-| POST | `/api/vehicles/:id/report` | – | Meldung |
-| GET | `/v/:id` | Cache API 5 min | SPA-HTML mit Open-Graph-Tags (HTMLRewriter) |
+| Methode     | Pfad                                     | Cache                         | Zweck                                       |
+| ----------- | ---------------------------------------- | ----------------------------- | ------------------------------------------- |
+| GET         | `/api/health`                            | –                             | Deployment-Check                            |
+| GET         | `/api/auth/:provider/login`, `/callback` | –                             | OAuth                                       |
+| POST        | `/api/auth/logout`                       | –                             | Session löschen                             |
+| GET         | `/api/me`                                | privat                        | Nutzer + Kontingent                         |
+| GET         | `/api/vehicles?mine=1`                   | privat                        | Garage                                      |
+| PUT         | `/api/vehicles/:id`                      | –                             | Speichern (Zod-Validierung, ≤ 512 KB)       |
+| PUT         | `/api/vehicles/:id/thumb`                | –                             | Thumbnail (WebP ≤ 100 KB)                   |
+| DELETE      | `/api/vehicles/:id`                      | –                             | Löschen                                     |
+| GET         | `/api/vehicles/:id`                      | Cache API 5 min (öffentlich)  | Metadaten                                   |
+| GET         | `/api/vehicles/:id/data`                 | immutable (versionierter Key) | Fahrzeug-JSON                               |
+| GET         | `/api/gallery?filter…&cursor`            | Cache API 60 s                | Galerie                                     |
+| POST/DELETE | `/api/vehicles/:id/like`                 | –                             | Likes                                       |
+| POST        | `/api/vehicles/:id/report`               | –                             | Meldung                                     |
+| GET         | `/v/:id`                                 | Cache API 5 min               | SPA-HTML mit Open-Graph-Tags (HTMLRewriter) |
 
 Jeder schreibende Endpoint: Rate-Limit-Binding (pro Nutzer), Größenlimit, Origin-Prüfung (CSRF).
 
 ## 9. Phasenplan
 
-| Phase | Inhalt | Ergebnis |
-| --- | --- | --- |
-| **0 – Grundgerüst** | Monorepo, Vite-SPA, Hono-Worker mit `/api/health`, `wrangler.jsonc`, erste D1-Migration, CI, Deploy-Anleitung | „Hello World“ in Produktion und als Preview |
-| **1 – MVP** | Schema v1 + Migrationen, IndexedDB-Speicherung, Undo/Redo, parametrische Karosserie (8 Grundformen) mit Lack, Verbrenner (Otto/Diesel) mit 0D-Motormodell, Drehmoment-/Leistungskurve, Getriebe + Achsübersetzung, Zugkraftdiagramm, Massenbilanz/Schwerpunkt, Live-Kennzahlen, Plausibilitätsprüfungen, Einsteiger/Ingenieur-Modus, de/en, Dark Mode | Fahrzeug lokal konstruierbar |
-| 2 – Accounts & Community | OAuth, Cloud-Speichern, Galerie, Detailseite, Fork, Likes, Meldungen, OG-Bilder | öffentliche Website |
-| 3 – Elektro | E-Maschinen, Inverter, Batterie, Untersetzung | BEV |
-| 4 – Hybrid & Exoten | Topologien, Betriebsstrategie, Wankel, H2, Brennstoffzelle | alle Antriebsarten |
-| 5 – Fahrwerk | Hardpoint-Kinematik, Federn/Dämpfer/Stabis, Lenkung | Kinematikkurven |
-| 6 – Reifen & Bremsen | Pacejka MF, Bremsauslegung, Fading | – |
-| 7 – Aero & Baukasten | Anbauteile mit Ankerpunkten, Aero-Näherung, Flügelprofile | – |
-| 8 – Chassis & Nebensysteme | Steifigkeits-Ersatzmodell, Kühlung, Bordnetz | – |
-| 9 – Simulation | `SimulationInput`, 0–100, Vmax, Bremsweg, später Rundenzeit | – |
+| Phase                      | Inhalt                                                                                                                                                                                                                                                                                                                                                | Ergebnis                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **0 – Grundgerüst**        | Monorepo, Vite-SPA, Hono-Worker mit `/api/health`, `wrangler.jsonc`, erste D1-Migration, CI, Deploy-Anleitung                                                                                                                                                                                                                                         | „Hello World“ in Produktion und als Preview |
+| **1 – MVP**                | Schema v1 + Migrationen, IndexedDB-Speicherung, Undo/Redo, parametrische Karosserie (8 Grundformen) mit Lack, Verbrenner (Otto/Diesel) mit 0D-Motormodell, Drehmoment-/Leistungskurve, Getriebe + Achsübersetzung, Zugkraftdiagramm, Massenbilanz/Schwerpunkt, Live-Kennzahlen, Plausibilitätsprüfungen, Einsteiger/Ingenieur-Modus, de/en, Dark Mode | Fahrzeug lokal konstruierbar                |
+| 2 – Accounts & Community   | OAuth, Cloud-Speichern, Galerie, Detailseite, Fork, Likes, Meldungen, OG-Bilder                                                                                                                                                                                                                                                                       | öffentliche Website                         |
+| 3 – Elektro                | E-Maschinen, Inverter, Batterie, Untersetzung                                                                                                                                                                                                                                                                                                         | BEV                                         |
+| 4 – Hybrid & Exoten        | Topologien, Betriebsstrategie, Wankel, H2, Brennstoffzelle                                                                                                                                                                                                                                                                                            | alle Antriebsarten                          |
+| 5 – Fahrwerk               | Hardpoint-Kinematik, Federn/Dämpfer/Stabis, Lenkung                                                                                                                                                                                                                                                                                                   | Kinematikkurven                             |
+| 6 – Reifen & Bremsen       | Pacejka MF, Bremsauslegung, Fading                                                                                                                                                                                                                                                                                                                    | –                                           |
+| 7 – Aero & Baukasten       | Anbauteile mit Ankerpunkten, Aero-Näherung, Flügelprofile                                                                                                                                                                                                                                                                                             | –                                           |
+| 8 – Chassis & Nebensysteme | Steifigkeits-Ersatzmodell, Kühlung, Bordnetz                                                                                                                                                                                                                                                                                                          | –                                           |
+| 9 – Simulation             | `SimulationInput`, 0–100, Vmax, Bremsweg, später Rundenzeit                                                                                                                                                                                                                                                                                           | –                                           |
 
 Jede Phase endet mit lauffähigem, getestetem Stand auf `main`.
 
 ## 10. Entscheidungslog
 
-| Datum | Entscheidung | Status |
-| --- | --- | --- |
+| Datum      | Entscheidung                                                                                                                                                              | Status      |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | 2026-10-23 | Ein Worker mit Static Assets statt Pages (Cloudflare empfiehlt Workers für neue Full-Stack-Projekte; Previews, D1, R2 und Rate Limiting stehen dort direkt zur Verfügung) | beschlossen |
-| 2026-10-23 | Zustand + zundo statt Redux Toolkit | beschlossen |
-| 2026-10-23 | uPlot für Diagramme | beschlossen |
-| 2026-10-23 | Preview-Umgebung über Worker Previews (`previews`-Block) statt Wrangler-Environments | beschlossen |
-| 2026-10-23 | Lizenz AGPL-3.0-only | beschlossen |
-| 2026-10-23 | Produktions-Domain `car.scheber.com` (Custom Domain am Worker) | beschlossen |
+| 2026-10-23 | Zustand + zundo statt Redux Toolkit                                                                                                                                       | beschlossen |
+| 2026-10-23 | uPlot für Diagramme                                                                                                                                                       | beschlossen |
+| 2026-10-23 | Preview-Umgebung über Worker Previews (`previews`-Block) statt Wrangler-Environments                                                                                      | beschlossen |
+| 2026-10-23 | Lizenz AGPL-3.0-only                                                                                                                                                      | beschlossen |
+| 2026-10-23 | Produktions-Domain `car.scheber.com` (Custom Domain am Worker)                                                                                                            | beschlossen |
