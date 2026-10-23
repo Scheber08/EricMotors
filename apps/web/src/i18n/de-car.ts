@@ -410,6 +410,7 @@ export const deCar = {
     chooseEngine: 'Motor wählen',
     adoptEngine: 'In Motor-Bibliothek übernehmen',
     engineOf: 'Motor von {name}',
+    engineSummary: '{layout}, {cylinders} Zyl. · {liters} l',
     massBreakdown: 'Massenbilanz',
   },
 };

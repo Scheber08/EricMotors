@@ -402,6 +402,7 @@ export const enCar = {
     chooseEngine: 'Choose engine',
     adoptEngine: 'Add to engine library',
     engineOf: 'Engine of {name}',
+    engineSummary: '{layout}, {cylinders} cyl. · {liters} l',
     massBreakdown: 'Mass breakdown',
   },
 };

@@ -568,6 +568,7 @@ function PaintSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
 /** Motorwahl: aus der eigenen Motor-Bibliothek oder einer Vorlage, plus Einbaulage. */
 function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
   const t = useT();
+  const locale = useLocale();
   const { update } = useCarDocument.getState();
   const [library, setLibrary] = useState<DocSummary[]>([]);
   const [selected, setSelected] = useState<Engine | undefined>();
@@ -611,7 +612,11 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
     fam.cylinders *
     1000
   ).toFixed(1);
-  const summary = `${t(`options.params.engine.layout.${fam.layout}`)}${fam.cylinders} · ${liters} l · ${car.engine.variant.name}`;
+  const summary = `${t('designer.engineSummary', {
+    layout: t(`options.params.engine.layout.${fam.layout}`),
+    cylinders: fam.cylinders,
+    liters: Number(liters).toLocaleString(locale, { minimumFractionDigits: 1 }),
+  })} · ${car.engine.variant.name}`;
   const adopt = async () => {
     const engine: Engine = {
       schemaVersion: 1,
