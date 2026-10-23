@@ -45,7 +45,7 @@ export function carGeometry(car: Car): CarGeometry {
     trackRear: d.trackRear * d.width,
     rideHeight: car.suspension.rideHeight,
     volume: d.length * d.width * d.height,
-    hoodHeight: d.height * (0.5 + 0.25 * car.model.morph.hoodHeight),
+    hoodHeight: d.height * (0.52 + 0.25 * car.model.morph.hoodHeight),
     tankVolume: (35 + 7 * (d.length - 3.5)) * shapeTank * 1e-3,
   };
 }

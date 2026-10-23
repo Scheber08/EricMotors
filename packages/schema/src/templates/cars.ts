@@ -137,7 +137,7 @@ function lightRoadster(): Car {
     },
     morph: {
       ...c.model.morph,
-      hoodHeight: 0.35,
+      hoodHeight: 0.45,
       roofLength: 0,
       deckHeight: 0.6,
       windshieldRake: 0.55,
