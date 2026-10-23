@@ -303,6 +303,15 @@ export const deCar = {
   },
   stats: {
     car: {
+      electricConsumption: 'Stromverbrauch',
+      fromGrid: 'ab Steckdose',
+      chargeTime: 'Schnellladen 10–80 %',
+      chargeHint: 'bis {power}',
+      electricRange: 'davon {value} elektrisch',
+      fade: '{stops} Vollbremsungen bis Fading',
+      energyCost: 'Energiekosten',
+      per100km: 'pro 100 km',
+      stiffness: 'Torsionssteifigkeit',
       power: 'Leistung',
       mass: 'Leergewicht',
       accel: 'Beschleunigung',
@@ -320,7 +329,8 @@ export const deCar = {
     },
   },
   charts: {
-    traction: 'Zugkraft je Gang und Fahrwiderstand (kN)',
+    motorCurve: 'E-Motor {axle}',
+    traction: 'Zugkraft je Gang bzw. E-Motor und Fahrwiderstand (kN)',
     resistance: 'Fahrwiderstand',
   },
   ratings: {

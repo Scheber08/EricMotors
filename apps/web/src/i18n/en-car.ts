@@ -293,6 +293,15 @@ export const enCar = {
   },
   stats: {
     car: {
+      electricConsumption: 'Electricity use',
+      fromGrid: 'from the grid',
+      chargeTime: 'Fast charge 10–80 %',
+      chargeHint: 'up to {power}',
+      electricRange: '{value} of it electric',
+      fade: '{stops} full stops until fade',
+      energyCost: 'Energy cost',
+      per100km: 'per 100 km',
+      stiffness: 'Torsional stiffness',
       power: 'Power',
       mass: 'Kerb weight',
       accel: 'Acceleration',
@@ -310,7 +319,8 @@ export const enCar = {
     },
   },
   charts: {
-    traction: 'Tractive force per gear and road load (kN)',
+    motorCurve: 'E-motor {axle}',
+    traction: 'Tractive force per gear or e-motor and road load (kN)',
     resistance: 'Road load',
   },
   ratings: {

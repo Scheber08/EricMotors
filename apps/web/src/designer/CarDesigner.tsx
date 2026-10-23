@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import type { CarAnalysis } from '@ericmotors/physics';
+import { type CarAnalysis, energyCostPer100km } from '@ericmotors/physics';
 import { BodyShape, Car } from '@ericmotors/schema';
 import { useLocale, useT } from '../i18n';
 import { setPath } from '../lib/path';
@@ -25,7 +25,8 @@ import {
   SliderField,
   ToggleField,
 } from './fields';
-import { RatingBars, Stat, WarningList } from './Stats';
+import { Stat, WarningList } from './Stats';
+import { Donut, Gauge, RatingRadar } from './Graphics';
 import { useAutosave } from './useAutosave';
 import { PowertrainSection } from './car/PowertrainSection';
 
@@ -628,62 +629,120 @@ export function CarOutput({
     return {
       x: grid.map((v) => speedUnit.toDisplay(v)),
       unit: speedUnit.unit,
-      gears: analysis.performance.traction.map((c) => grid.map((v) => interp(c.points, v))),
+      curves: analysis.performance.traction.map((c) => ({
+        label:
+          c.unit === 'motor'
+            ? t('charts.motorCurve', {
+                axle: t(`designer.${c.axle === 'front' ? 'front' : 'rear'}`),
+              })
+            : car.drivetrain.gearbox === 'cvt'
+              ? 'CVT'
+              : `${c.gear}.`,
+        color: c.unit !== 'motor' ? '--chart-1' : c.axle === 'front' ? '--chart-5' : '--chart-2',
+        values: grid.map((v) => interp(c.points, v)),
+      })),
       resistance: grid.map((v) => interp(analysis.performance.resistance, v)),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analysis, units, power]);
+  }, [analysis, units, power, t]);
 
   if (!analysis || !traction)
     return <div className="output muted">{error ?? t('common.calculating')}</div>;
   const p = analysis.performance;
+  const ps = analysis.powertrain;
   const f = (
     v: number | null | undefined,
     q: Parameters<typeof formatQuantity>[1],
     digits?: number,
   ) => formatQuantity(v, q, uc, locale, digits);
-  const powerToMass = analysis.powertrain.systemPower / analysis.mass.total;
+  const powerToMass = ps.systemPower / analysis.mass.total;
   const pwUnit = unitFor('power', uc);
   const massUnit = unitFor('mass', uc);
   const groups = analysis.mass.items.reduce<Record<string, number>>(
     (acc, i) => ({ ...acc, [i.group]: (acc[i.group] ?? 0) + i.mass }),
     {},
   );
+  const kmh = 3.6;
+  const hasFuel = p.fuelPerDistance > 0;
+  const hasElectric = p.electricPerDistance > 0;
+  const costPer100 = energyCostPer100km(car, p);
+  const tone = ps.type === 'electric' ? 'electric' : ps.type === 'hybrid' ? 'battery' : 'ice';
 
   return (
     <div className="output">
-      <div className="stats">
-        <Stat
+      <div className="gauges">
+        <Gauge
           label={t('stats.car.power')}
-          value={f(analysis.powertrain.systemPower, 'power')}
-          hint={analysis.engine ? f(analysis.engine.curve.peakTorque.torque, 'torque') : ''}
+          value={f(ps.systemPower, 'power')}
+          hint={analysis.engine ? f(analysis.engine.curve.peakTorque.torque, 'torque') : undefined}
+          fraction={Math.log(ps.systemPower / 40e3) / Math.log(1500e3 / 40e3)}
+          tone={tone}
         />
+        <Gauge
+          label={t('stats.car.accel')}
+          value={f(p.accel0to100, 'time')}
+          hint={units === 'imperial' ? '0–62 mph' : '0–100 km/h'}
+          fraction={(16 - (p.accel0to100 ?? 16)) / 14}
+        />
+        <Gauge
+          label={t('stats.car.topSpeed')}
+          value={f(p.topSpeed, 'speed')}
+          fraction={(p.topSpeed * kmh - 100) / 350}
+        />
+        <Gauge
+          label={t('stats.car.range')}
+          value={f(p.range, 'longDistance')}
+          hint={
+            p.electricRange !== null && ps.type === 'hybrid'
+              ? t('stats.car.electricRange', { value: f(p.electricRange, 'longDistance') })
+              : undefined
+          }
+          fraction={p.range / 1000e3}
+          tone={ps.type === 'ice' ? 'ice' : 'battery'}
+        />
+      </div>
+      <div className="stats">
+        {hasFuel && (
+          <Stat
+            label={t('stats.car.consumption')}
+            value={f(p.fuelPerDistance, 'consumption')}
+            hint={f(p.co2PerDistance, 'co2')}
+          />
+        )}
+        {hasElectric && (
+          <Stat
+            label={t('stats.car.electricConsumption')}
+            value={f(p.electricPerDistance, 'electricConsumption')}
+            hint={t('stats.car.fromGrid')}
+          />
+        )}
+        {p.chargeTime !== null && (
+          <Stat
+            label={t('stats.car.chargeTime')}
+            value={f(p.chargeTime, 'minutes')}
+            hint={t('stats.car.chargeHint', { power: f(ps.chargePower, 'power') })}
+          />
+        )}
         <Stat
           label={t('stats.car.mass')}
           value={f(analysis.mass.total, 'mass')}
           hint={`${Math.round(analysis.mass.frontWeightShare * 100)} : ${Math.round((1 - analysis.mass.frontWeightShare) * 100)}`}
         />
         <Stat
-          label={t('stats.car.accel')}
-          value={f(p.accel0to100, 'time')}
-          hint={units === 'imperial' ? '0–62 mph' : '0–100 km/h'}
-        />
-        <Stat label={t('stats.car.topSpeed')} value={f(p.topSpeed, 'speed')} />
-        <Stat
           label={t('stats.car.braking')}
           value={f(p.braking100to0, 'distance')}
-          hint={units === 'imperial' ? '62–0 mph' : '100–0 km/h'}
+          hint={t('stats.car.fade', { stops: p.fadeStops })}
         />
         <Stat label={t('stats.car.lateral')} value={f(p.lateralAcceleration, 'acceleration')} />
-        <Stat
-          label={t('stats.car.consumption')}
-          value={f(p.fuelPerDistance, 'consumption')}
-          hint={f(p.co2PerDistance, 'co2')}
-        />
         <Stat
           label={t('stats.car.cost')}
           value={f(analysis.cost.total, 'money')}
           hint={t('stats.car.running', { value: f(analysis.runningCost, 'money') })}
+        />
+        <Stat
+          label={t('stats.car.energyCost')}
+          value={`${costPer100.toLocaleString(locale, { maximumFractionDigits: 2, minimumFractionDigits: 2 })} €`}
+          hint={t('stats.car.per100km')}
         />
         {engineer && (
           <Stat
@@ -697,6 +756,12 @@ export function CarOutput({
             value={`${analysis.aero.dragCoefficient.toFixed(3)} · ${analysis.aero.frontalArea.toFixed(2)} m²`}
           />
         )}
+        {engineer && (
+          <Stat
+            label={t('stats.car.stiffness')}
+            value={`${Math.round((analysis.torsionalStiffness * Math.PI) / 180 / 1000).toLocaleString(locale)} kN·m/°`}
+          />
+        )}
         {engineer && <Stat label={t('stats.car.quarterMile')} value={f(p.quarterMile, 'time')} />}
         {engineer && (
           <Stat
@@ -705,7 +770,16 @@ export function CarOutput({
             hint={units === 'imperial' ? '50–75 mph' : '80–120 km/h'}
           />
         )}
-        {engineer && <Stat label={t('stats.car.range')} value={f(p.range, 'longDistance')} />}
+      </div>
+      <div className="output-columns">
+        <section className="panel">
+          <h3>{t('designer.ratings')}</h3>
+          <RatingRadar ratings={{ ...analysis.ratings }} ns="ratings.car" />
+        </section>
+        <section className="panel">
+          <h3>{t('designer.warnings')}</h3>
+          <WarningList warnings={analysis.warnings} onSelect={(w) => onWarning(w.path)} />
+        </section>
       </div>
       <Chart
         title={t('charts.traction')}
@@ -716,10 +790,10 @@ export function CarOutput({
         formatX={(v) => Math.round(v).toString()}
         formatY={(v) => v.toFixed(1)}
         series={[
-          ...traction.gears.map((values, i) => ({
-            label: car.drivetrain.gearbox === 'cvt' ? 'CVT' : `${i + 1}.`,
-            color: '--chart-2',
-            values,
+          ...traction.curves.map((c) => ({
+            label: c.label,
+            color: c.color,
+            values: c.values,
             width: 1.5,
           })),
           {
@@ -730,33 +804,20 @@ export function CarOutput({
           },
         ]}
       />
-      <div className="output-columns">
-        <section>
-          <h3>{t('designer.ratings')}</h3>
-          <RatingBars ratings={{ ...analysis.ratings }} ns="ratings.car" />
-        </section>
-        <section>
-          <h3>{t('designer.warnings')}</h3>
-          <WarningList warnings={analysis.warnings} onSelect={(w) => onWarning(w.path)} />
-        </section>
-      </div>
-      {engineer && (
-        <section>
-          <h3>{t('designer.massBreakdown')}</h3>
-          <table className="table">
-            <tbody>
-              {Object.entries(groups)
-                .sort((a, b) => b[1] - a[1])
-                .map(([g, m]) => (
-                  <tr key={g}>
-                    <td>{t(`massGroups.${g}`)}</td>
-                    <td className="num">{f(m, 'mass')}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </section>
-      )}
+      <section className="panel">
+        <h3>{t('designer.massBreakdown')}</h3>
+        <Donut
+          parts={Object.entries(groups).map(([g, m]) => ({
+            key: g,
+            label: t(`massGroups.${g}`),
+            value: m,
+          }))}
+          center={f(analysis.mass.total, 'mass')}
+          centerLabel={t('stats.car.mass')}
+          otherLabel={t('massGroups.misc')}
+          format={(v) => f(v, 'mass')}
+        />
+      </section>
     </div>
   );
 }
