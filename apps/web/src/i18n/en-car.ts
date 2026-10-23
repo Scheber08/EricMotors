@@ -282,6 +282,7 @@ export const enCar = {
       offroad: 'Off-road',
       reliability: 'Reliability',
       prestige: 'Prestige',
+      environment: 'Environment',
     },
   },
   warnings: {
@@ -342,6 +343,42 @@ export const enCar = {
         text: 'The engine is at risk of overheating.',
         fix: 'Enlarge the cooling openings.',
       },
+      batteryLimitsPower: {
+        text: 'The battery cannot deliver the full motor power.',
+        fix: 'Choose a bigger battery, power cells or better battery cooling.',
+      },
+      rangeShort: {
+        text: 'The range is very short.',
+        fix: 'Enlarge the battery, reduce drag or save weight.',
+      },
+      plugInRangeShort: {
+        text: 'Little electric range for a plug-in hybrid.',
+        fix: 'Enlarge the battery.',
+      },
+      batteryCooling: {
+        text: 'Passive cooling is not enough for this battery power.',
+        fix: 'Choose air or liquid cooling.',
+      },
+      chargeSlow: {
+        text: 'Fast charging takes very long.',
+        fix: 'Choose 800-volt technology, liquid cooling or another cell chemistry.',
+      },
+      layoutMismatch: {
+        text: 'The drive layout does not match the position of the electric motors.',
+        fix: 'Adjust the drive layout to the motors.',
+      },
+      motorSpeedLimit: {
+        text: 'Top speed is limited by the motor speed.',
+        fix: 'Choose a lower reduction ratio or a higher-revving motor.',
+      },
+      brakeFade: {
+        text: 'The brakes overheat quickly (fade).',
+        fix: 'Vented or ceramic discs, larger discs or more cooling air.',
+      },
+      chassisFlex: {
+        text: 'The body is too flexible for these cornering forces.',
+        fix: 'Choose a monocoque, a stiffer material or a closed body shape.',
+      },
       brakeRimClearance: {
         text: 'The brake disc does not fit inside the rim.',
         fix: 'Choose larger rims or smaller discs.',
@@ -384,6 +421,8 @@ export const enCar = {
     cooling: 'Cooling',
     electrical: 'Electrics',
     aero: 'Aero parts',
+    motors: 'Electric motors',
+    battery: 'Battery',
     misc: 'Other',
   },
   designer: {

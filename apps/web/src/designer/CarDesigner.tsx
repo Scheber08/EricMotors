@@ -59,7 +59,7 @@ const deg = (x: number) => (x * Math.PI) / 180;
 /** Abschnitt, zu dem eine Warnung gehört (aus dem Pfad). */
 function sectionOf(path: string): Section {
   const head = path.split('.')[0]!;
-  if (head === 'engine') return 'engine';
+  if (head === 'engine' || head === 'powertrain') return 'engine';
   if (head === 'aero') return 'aero';
   return (SECTIONS as readonly string[]).includes(head) ? (head as Section) : 'model';
 }
@@ -137,8 +137,8 @@ export function CarDesigner({ id }: { id: string }) {
           }
           stats={
             analysis.result && {
-              powerW: analysis.result.engine.curve.peakPower.power,
-              torqueNm: analysis.result.engine.curve.peakTorque.torque,
+              powerW: analysis.result.powertrain.systemPower,
+              torqueNm: analysis.result.engine?.curve.peakTorque.torque ?? 0,
               massKg: analysis.result.mass.total,
               accelS: analysis.result.performance.accel0to100,
               topSpeedMs: analysis.result.performance.topSpeed,
@@ -277,7 +277,9 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
         </>
       );
     case 'engine':
-      return <EngineSection car={car} ctx={ctx} />;
+      return car.powertrain.engine ? (
+        <EngineSection car={car} engine={car.powertrain.engine} ctx={ctx} />
+      ) : null;
     case 'trim':
       return (
         <FieldGroup title={t('sections.car.trim')}>
@@ -588,7 +590,15 @@ function PaintSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
 }
 
 /** Motorwahl: aus der eigenen Motor-Bibliothek oder einer Vorlage, plus Einbaulage. */
-function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
+function EngineSection({
+  car,
+  engine: carEngine,
+  ctx,
+}: {
+  car: Car;
+  engine: CarEngine;
+  ctx: FieldContext;
+}) {
   const t = useT();
   const locale = useLocale();
   const { update } = useCarDocument.getState();
@@ -598,10 +608,10 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
     void garage.listEngines().then(setLibrary);
   }, []);
   useEffect(() => {
-    const engineId = car.engine.source?.engineId;
+    const engineId = carEngine.source?.engineId;
     if (!engineId) return;
     void garage.loadEngine(engineId).then(setSelected);
-  }, [car.engine.source?.engineId]);
+  }, [carEngine.source?.engineId]);
 
   const install = (engine: Engine, variantId: string) => {
     const index = Math.max(
@@ -609,7 +619,7 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
       engine.variants.findIndex((v) => v.id === variantId),
     );
     update((d) => {
-      d.engine = carEngineFrom(engine, d.engine.placement, index);
+      d.powertrain.engine = carEngineFrom(engine, d.powertrain.engine!.placement, index);
     });
   };
   const onPick = async (value: string) => {
@@ -625,12 +635,12 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
       }
     }
   };
-  const libraryVariant = selected?.variants.find((v) => v.id === car.engine.source?.variantId);
-  const fam = car.engine.family;
+  const libraryVariant = selected?.variants.find((v) => v.id === carEngine.source?.variantId);
+  const fam = carEngine.family;
   const liters = (
     (Math.PI / 4) *
-    car.engine.variant.bore ** 2 *
-    car.engine.variant.stroke *
+    carEngine.variant.bore ** 2 *
+    carEngine.variant.stroke *
     fam.cylinders *
     1000
   ).toFixed(1);
@@ -638,23 +648,26 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
     layout: t(`options.params.engine.layout.${fam.layout}`),
     cylinders: fam.cylinders,
     liters: Number(liters).toLocaleString(locale, { minimumFractionDigits: 1 }),
-  })} · ${car.engine.variant.name}`;
+  })} · ${carEngine.variant.name}`;
   const adopt = async () => {
     const engine: Engine = {
       schemaVersion: 1,
       kind: 'engine',
       id: newId(),
       meta: { name: t('designer.engineOf', { name: car.meta.name }), description: '', tags: [] },
-      family: structuredClone(car.engine.family),
-      variants: [structuredClone(car.engine.variant)],
+      family: structuredClone(carEngine.family),
+      variants: [structuredClone(carEngine.variant)],
     };
     await garage.saveEngine(engine);
     setSelected(engine);
     setLibrary(await garage.listEngines());
-    update((d) => (d.engine.source = { engineId: engine.id, variantId: engine.variants[0]!.id }));
+    update(
+      (d) =>
+        (d.powertrain.engine!.source = { engineId: engine.id, variantId: engine.variants[0]!.id }),
+    );
   };
   const outdated =
-    !!libraryVariant && JSON.stringify(libraryVariant) !== JSON.stringify(car.engine.variant);
+    !!libraryVariant && JSON.stringify(libraryVariant) !== JSON.stringify(carEngine.variant);
 
   return (
     <FieldGroup title={t('sections.car.engine')}>
@@ -666,7 +679,7 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
             {t('designer.adoptEngine')}
           </button>
         )}
-        {car.engine.source && selected && (
+        {carEngine.source && selected && (
           <Link className="btn small" href={`/engine/${selected.id}`}>
             {t('designer.editEngine')}
           </Link>
@@ -718,7 +731,7 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
           <select
             id="variant-pick"
             className="select"
-            value={car.engine.source?.variantId}
+            value={carEngine.source?.variantId}
             onChange={(e) => install(selected, e.target.value)}
           >
             {selected.variants.map((v) => (
@@ -784,7 +797,7 @@ export function CarOutput({
     return {
       x: grid.map((v) => speedUnit.toDisplay(v)),
       unit: speedUnit.unit,
-      gears: analysis.performance.traction.map((pts) => grid.map((v) => interp(pts, v))),
+      gears: analysis.performance.traction.map((c) => grid.map((v) => interp(c.points, v))),
       resistance: grid.map((v) => interp(analysis.performance.resistance, v)),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -798,7 +811,7 @@ export function CarOutput({
     q: Parameters<typeof formatQuantity>[1],
     digits?: number,
   ) => formatQuantity(v, q, uc, locale, digits);
-  const powerToMass = analysis.engine.curve.peakPower.power / analysis.mass.total;
+  const powerToMass = analysis.powertrain.systemPower / analysis.mass.total;
   const pwUnit = unitFor('power', uc);
   const massUnit = unitFor('mass', uc);
   const groups = analysis.mass.items.reduce<Record<string, number>>(
@@ -811,8 +824,8 @@ export function CarOutput({
       <div className="stats">
         <Stat
           label={t('stats.car.power')}
-          value={f(analysis.engine.curve.peakPower.power, 'power')}
-          hint={f(analysis.engine.curve.peakTorque.torque, 'torque')}
+          value={f(analysis.powertrain.systemPower, 'power')}
+          hint={analysis.engine ? f(analysis.engine.curve.peakTorque.torque, 'torque') : ''}
         />
         <Stat
           label={t('stats.car.mass')}

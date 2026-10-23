@@ -65,9 +65,13 @@ const base = {
       'muscle-car': 'Muscle car',
       'hot-hatch': 'Hot hatch',
       'diesel-wagon': 'Diesel estate',
+      'e-compact': 'Electric saloon',
+      'e-hypercar': 'Electric hypercar',
+      'plugin-hybrid': 'Plug-in hybrid',
     },
     engine: {
       'i4-16-na': '1.6 inline-four',
+      'i4-14-turbo': '1.4 turbo',
       'i4-20-na-sport': '2.0 sport NA',
       'i4-20-turbo': '2.0 turbo',
       'v8-50-na': '5.0 V8',

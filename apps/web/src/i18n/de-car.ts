@@ -293,6 +293,7 @@ export const deCar = {
       offroad: 'Offroad',
       reliability: 'Zuverlässigkeit',
       prestige: 'Prestige',
+      environment: 'Umwelt',
     },
   },
   warnings: {
@@ -350,6 +351,42 @@ export const deCar = {
         fix: 'Größere Scheiben, mehr Kolben oder bessere Beläge verbauen.',
       },
       overheating: { text: 'Der Motor droht zu überhitzen.', fix: 'Kühlluftöffnungen vergrößern.' },
+      batteryLimitsPower: {
+        text: 'Die Batterie kann nicht die volle Motorleistung liefern.',
+        fix: 'Größere Batterie, Leistungszellen oder bessere Batteriekühlung wählen.',
+      },
+      rangeShort: {
+        text: 'Die Reichweite ist sehr kurz.',
+        fix: 'Batterie vergrößern, Luftwiderstand senken oder Gewicht sparen.',
+      },
+      plugInRangeShort: {
+        text: 'Wenig elektrische Reichweite für einen Plug-in-Hybrid.',
+        fix: 'Batterie vergrößern.',
+      },
+      batteryCooling: {
+        text: 'Passive Kühlung reicht für diese Batterieleistung nicht.',
+        fix: 'Luft- oder Flüssigkeitskühlung wählen.',
+      },
+      chargeSlow: {
+        text: 'Das Schnellladen dauert sehr lange.',
+        fix: '800-Volt-Technik, Flüssigkeitskühlung oder eine andere Zellchemie wählen.',
+      },
+      layoutMismatch: {
+        text: 'Die Antriebsart passt nicht zur Lage der E-Motoren.',
+        fix: 'Antriebsart an die Motoren anpassen.',
+      },
+      motorSpeedLimit: {
+        text: 'Die Höchstgeschwindigkeit wird von der Motordrehzahl begrenzt.',
+        fix: 'Kleinere Untersetzung oder höherdrehenden Motor wählen.',
+      },
+      brakeFade: {
+        text: 'Die Bremsen überhitzen schnell (Fading).',
+        fix: 'Innenbelüftete oder Keramikscheiben, größere Scheiben oder mehr Kühlluft.',
+      },
+      chassisFlex: {
+        text: 'Die Karosserie ist für diese Querkräfte zu weich.',
+        fix: 'Monocoque, steiferes Material oder geschlossene Karosserieform wählen.',
+      },
       brakeRimClearance: {
         text: 'Die Bremsscheibe passt nicht in die Felge.',
         fix: 'Größere Felgen oder kleinere Bremsscheiben wählen.',
@@ -392,6 +429,8 @@ export const deCar = {
     cooling: 'Kühlung',
     electrical: 'Elektrik',
     aero: 'Aero-Teile',
+    motors: 'E-Motoren',
+    battery: 'Batterie',
     misc: 'Sonstiges',
   },
   designer: {
