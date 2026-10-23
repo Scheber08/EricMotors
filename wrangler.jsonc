@@ -33,8 +33,7 @@
     {
       "binding": "DB",
       "database_name": "ericmotors-prod",
-      // TODO(setup): ID aus `npx wrangler d1 create ericmotors-prod` eintragen (keine geheime Angabe).
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "99fe598e-66f8-4dd3-afbc-2050bcedcbcc",
       "migrations_dir": "migrations",
     },
   ],
@@ -57,8 +56,7 @@
       {
         "binding": "DB",
         "database_name": "ericmotors-preview",
-        // TODO(setup): ID aus `npx wrangler d1 create ericmotors-preview` eintragen.
-        "database_id": "00000000-0000-0000-0000-000000000000",
+        "database_id": "9ec9909e-46bb-4b18-8b9c-86afeeade50f",
       },
     ],
     "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "ericmotors-preview" }],

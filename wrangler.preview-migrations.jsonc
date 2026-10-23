@@ -8,8 +8,8 @@
     {
       "binding": "PREVIEW_DB",
       "database_name": "ericmotors-preview",
-      // TODO(setup): gleiche ID wie in wrangler.jsonc › previews.d1_databases.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Gleiche ID wie in wrangler.jsonc › previews.d1_databases.
+      "database_id": "9ec9909e-46bb-4b18-8b9c-86afeeade50f",
       "migrations_dir": "migrations",
     },
   ],
