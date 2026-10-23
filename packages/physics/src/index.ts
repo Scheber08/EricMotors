@@ -4,3 +4,5 @@
  */
 export * from './constants';
 export * from './engine/curve';
+export * from './engine/properties';
+export * from './engine/analyze';
