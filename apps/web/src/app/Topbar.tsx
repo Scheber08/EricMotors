@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { BRAND } from '../brand';
+import { AccountMenu } from '../community/AccountMenu';
 import { useT } from '../i18n';
 import { type Settings, useSettings } from '../state/settings';
 
@@ -135,8 +136,10 @@ export function Topbar() {
       <nav>
         {link('/', t('app.nav.home'))}
         {link('/garage', t('app.nav.garage'))}
+        {link('/gallery', t('app.nav.gallery'))}
       </nav>
       <div className="spacer" />
+      <AccountMenu />
       <SettingsMenu />
     </header>
   );

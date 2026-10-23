@@ -1,6 +1,7 @@
 import type { Dictionary } from './index';
 import { enEngine } from './en-engine';
 import { enCar } from './en-car';
+import { enCommunity } from './en-community';
 import { mergeDictionaries } from './merge';
 
 const base = {
@@ -91,4 +92,4 @@ const base = {
   },
 } satisfies Dictionary;
 
-export const en: Dictionary = mergeDictionaries(base, enEngine, enCar);
+export const en: Dictionary = mergeDictionaries(base, enEngine, enCar, enCommunity);

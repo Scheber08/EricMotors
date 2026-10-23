@@ -464,7 +464,7 @@ function VariantTabs({
   );
 }
 
-function EngineOutput({ analysis }: { analysis: ReturnType<typeof useEngineAnalysis> }) {
+export function EngineOutput({ analysis }: { analysis: ReturnType<typeof useEngineAnalysis> }) {
   const t = useT();
   const locale = useLocale();
   const units = useSettings((s) => s.units);

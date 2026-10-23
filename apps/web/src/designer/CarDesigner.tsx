@@ -724,7 +724,7 @@ function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
   );
 }
 
-function CarOutput({
+export function CarOutput({
   car,
   analysis,
   error,
