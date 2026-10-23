@@ -170,6 +170,20 @@ r = await call(
   { 'content-type': 'image/webp' },
 );
 expect('kein WebP → abgelehnt', r.status === 400, r.json);
+r = await call('GET', `/v/${car.id}`);
+expect(
+  'Teilen-Seite mit Open-Graph-Tags',
+  typeof r.json === 'string' &&
+    r.json.includes('property="og:title" content="Smoke GTI') &&
+    r.json.includes('og:image'),
+  typeof r.json === 'string' ? r.json.slice(0, 300) : r.json,
+);
+r = await call('GET', '/v/00000000-0000-4000-8000-000000000000');
+expect(
+  'Teilen-Seite unbekannt → normale App',
+  r.status === 200 && typeof r.json === 'string' && r.json.includes('<div id="root">'),
+  r.status,
+);
 r = await call('GET', `/api/designs/${car.id}/data?v=2`);
 expect('Daten laden', r.status === 200 && r.json.meta.name === 'Smoke GTI', r.json);
 const engine = { ...ENGINE_TEMPLATES['v8-50-na'](), id: crypto.randomUUID() };

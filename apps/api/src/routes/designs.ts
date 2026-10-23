@@ -86,7 +86,7 @@ function canView(c: Context<AppEnv>, r: DesignRow): boolean {
   return own || (r.visibility !== 'private' && !r.hidden);
 }
 
-async function findDesign(c: Context<AppEnv>, id: string): Promise<DesignRow | null> {
+export async function findDesign(c: Context<AppEnv>, id: string): Promise<DesignRow | null> {
   if (!ID.test(id)) return null;
   return c.env.DB.prepare(`${SELECT} WHERE d.id = ?`).bind(id).first<DesignRow>();
 }
@@ -95,7 +95,7 @@ async function findDesign(c: Context<AppEnv>, id: string): Promise<DesignRow | n
  * Liefert eine gecachte Antwort oder erzeugt eine neue. Nur Antworten, die `produce` ausdrücklich als
  * öffentlich markiert, landen im Cache – private Inhalte nie.
  */
-async function cached(
+export async function cached(
   c: Context<AppEnv>,
   ttl: number,
   produce: () => Promise<{ response: Response; cacheable: boolean } | null>,
@@ -118,7 +118,7 @@ async function cached(
   return response;
 }
 
-const isPublic = (r: DesignRow) => r.visibility !== 'private' && !r.hidden;
+export const isPublic = (r: DesignRow) => r.visibility !== 'private' && !r.hidden;
 
 // ---------- Speichern ----------
 

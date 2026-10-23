@@ -3,6 +3,7 @@ import type { Env } from './env';
 import { loadUser, sameOrigin } from './lib/http';
 import { auth } from './routes/auth';
 import { designs } from './routes/designs';
+import { share } from './routes/share';
 
 /**
  * API-Worker. Rechnet bewusst nichts Physikalisches (Free Plan: 10 ms CPU pro Request).
@@ -30,12 +31,11 @@ app.get('/api/health', async (c) => {
 app.use('/api/*', sameOrigin, loadUser);
 app.route('/', auth);
 app.route('/', designs);
+app.route('/', share);
 
 app.notFound((c) => {
-  // Share-Seiten (`/v/:id`) bekommen später Open-Graph-Tags; bis dahin die SPA ausliefern.
-  if (new URL(c.req.url).pathname.startsWith('/v/')) {
+  if (new URL(c.req.url).pathname.startsWith('/v/'))
     return c.env.ASSETS.fetch(new URL('/', c.req.url));
-  }
   return c.json({ error: 'not_found' }, 404);
 });
 
