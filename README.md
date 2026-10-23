@@ -1,4 +1,6 @@
-# EricMotors
+# ScheberMotors
+
+> Interner Entwicklungsname: **EricMotors** (Repository, Worker, Pakete). Öffentlich heißt die Website **ScheberMotors**.
 
 Ingenieursnaher Fahrzeug-Konfigurator im Browser: Karosserie, Antrieb, Antriebsstrang,
 Fahrwerk, Bremsen, Reifen, Aerodynamik – definiert über reale physikalische Parameter.

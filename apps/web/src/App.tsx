@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BRAND } from './brand';
 
 type Health =
   | { state: 'loading' }
@@ -24,7 +25,8 @@ export function App() {
   return (
     <main className="hero">
       <h1>
-        Eric<span>Motors</span>
+        {BRAND.prefix}
+        <span>{BRAND.suffix}</span>
       </h1>
       <p>Konstruiere dein eigenes Auto – ingenieursnah, bis ins kleinste Detail.</p>
       <p className="status" aria-live="polite">
