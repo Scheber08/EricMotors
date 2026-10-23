@@ -79,12 +79,86 @@ P    = M · ω
 (< 0,6 oder > 1,4), Aufladung ohne Ladeluftkühler, Begrenzer unter dem Leistungsmaximum,
 Diesel über 5500/min, Diesel mit Verdichtung < 14.
 
-## Auto
+## Auto: Masse (`car/mass.ts`)
 
-Folgt (Masse und Gewichtsverteilung, cw·A, Reifen, 0–100 km/h, Höchstgeschwindigkeit, Bremsweg,
-Querbeschleunigung, Verbrauch, Ratings, Kosten).
+Jede Baugruppe bekommt Masse und Schwerpunktlage (x, z). Bezugsgröße für Karosserie, Glas,
+Elektrik und Kleinteile ist das Hüllvolumen V = L · B · H.
+
+| Baugruppe                                                                      | Ansatz                                                                                                 |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Rohkarosserie                                                                  | 25 kg/m³ · V · Bauart (Monocoque 1, Leiterrahmen 1,4, Gitterrohr 0,8) · Werkstoff (Alu 0,65, CFK 0,45) |
+| Außenhaut                                                                      | 11 kg/m³ · V · Form · Werkstoff (Alu 0,6, GFK 0,7, CFK 0,45)                                           |
+| Motor                                                                          | aus der Motoranalyse; Lage nach Einbauposition                                                         |
+| Getriebe/Antrieb                                                               | Bauart, Gangzahl, Allrad +55 kg, Kardanwelle, Sperre                                                   |
+| Räder                                                                          | Felge ~ (D/17″)^1,5 · Breite · Werkstoff, Reifen ~ Breite · (Außendurchmesser)^1,5                     |
+| Bremsen, Fahrwerk                                                              | Tabellenwerte je Bauart, Scheibe ~ D²                                                                  |
+| Innenraum, Ausstattung, Kraftstoff (90 %), Abgas, Kühlung, Elektrik, Sonstiges | Tabellen- bzw. Volumenansätze                                                                          |
+
+Schwerpunkt und Achslastverteilung folgen aus Σ m·x / Σ m. Kalibrierung: Roadster ≈ 1100 kg,
+Kompakt ≈ 1350 kg, Muscle Car ≈ 1620 kg, Kombi ≈ 1480 kg (Test ±15 %).
+
+## Auto: Aerodynamik und Reifen
+
+- c_w: Grundwert je Karosserieform (Coupé 0,30 … Pickup 0,42, typische Serienwerte nach
+  Hucho 2013) plus Zuschläge für Scheibenneigung, Heckform, Nase, Radläufe, Unterboden, Kühlluft,
+  Flügel, Bodenfreiheit und Reifenbreite.
+- Stirnfläche A ≈ 0,84 · B · H (Hucho 2013). Auftrieb je Achse aus Grundwert, Flügeln und Unterboden.
+- Reifen: Haftbeiwert je Mischung (Öko 0,85 … Slick 1,35) · (Breite/225 mm)^0,1, Rollwiderstand
+  je Mischung (0,0075 … 0,016), dynamischer Radius = 0,97 · statischer Radius.
+
+## Auto: Fahrleistungen (`car/performance.ts`)
+
+```
+F_Rad = M_Motor · i_G · i_A · η / r
+F_W   = ½ · ρ · c_w · A · v² + f_R · (1 + V/160 km/h) · (m · g + F_Abtrieb)   Wong (2008), Gl. 1.1
+δ     = 1,04 + 0,0015 · (i_G · i_A)²                                          Form nach Wong (2008), Kap. 3.2
+```
+
+| Größe                  | Verfahren                                                                                                                                                                                                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Höchstgeschwindigkeit  | größtes v je Gang mit F_Rad ≥ F_W; Begrenzung durch Luftwiderstand oder Drehzahlbegrenzer                                                                                                                                                             |
+| 0–100, 80–120, ¼ Meile | Zeitschritt 5 ms; Anfahren mit schleifender Kupplung bzw. Wandler (Momentüberhöhung bis 1,9); Traktionsgrenze μ · Achslast mit dynamischer Achslastverlagerung m·a·h/L; Schaltpausen je Getriebe; traktionsbegrenzt nur Räder beschleunigt (δ = 1,04) |
+| Bremsweg 100–0         | ∫ v dv / a(v), a = min(Reibung · Wirkungsgrad, Bremskapazität / m); ABS, Abweichung der Bremskraftverteilung vom Optimum, Längs-μ = 1,08 · Quer-μ                                                                                                     |
+| Querbeschleunigung     | μ · (m·g + Abtrieb)/m bei 80 km/h · Faktoren für Lastempfindlichkeit, Fahrwerk, Sturz (Optimum −1,5°), Schwerpunkthöhe/Spur, Eigenlenkbalance                                                                                                         |
+| Verbrauch              | Mischzyklus 35 % Stadt (50 km/h, 1,2 Stopps/km, 15 % Standzeit), 40 % Land (90 km/h), 25 % Autobahn (120 km/h); höchster sinnvoller Gang; Teillast-Wirkungsgrad des Motors; Zuschlag 1,1                                                              |
+
+Kalibrierung (Test ±15 % Masse/Vmax, ±35 % Beschleunigung, ±25 % Verbrauch): Roadster
+7,7 s / 229 km/h / 6,3 l, Muscle Car 5,9 s / 284 km/h / 10,2 l, Turbo-Kompakter 6,3 s / 253 km/h /
+7,7 l, Diesel-Kombi 9,8 s / 208 km/h / 5,6 l.
+
+## Auto: Kosten, Ratings, Warnungen (`car/cost.ts`, `car/ratings.ts`)
+
+- **Herstellkosten:** Motor + Karosserie (Volumen^0,7 · Werkstoff · Lackart) + Antriebsstrang +
+  Fahrwerk + Räder + Bremsen + Ausstattung + Aero + Montage; je Abschnitt × (1 + 0,07 · Qualität).
+- **Unterhalt pro Jahr (15 000 km):** Kraftstoff + Wartung (2,5 % der Herstellkosten, mehr bei
+  geringer Zuverlässigkeit) + Reifenverschleiß.
+- **Ratings** (gewichtete Summe normierter Teilgrößen):
+
+| Rating          | wichtigste Einflüsse                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| Fahrbarkeit     | Drehmomentverlauf, Getriebeart, Fahrhilfen, Servolenkung, Ansprechverhalten, Balance               |
+| Sportlichkeit   | 0–100, Querbeschleunigung, Bremsweg, Leistungsgewicht, Masse                                       |
+| Komfort         | Federhärte, Dämpfung, Feder-/Dämpferart, Innenraum, Unterhaltung, Laufruhe, Geräusch, Reifenflanke |
+| Sicherheit      | Sicherheitsausstattung, Fahrhilfen, Bremsweg, Masse, Chassisbauart                                 |
+| Praktikabilität | Sitze, Laderaum, Verbrauch, Reichweite                                                             |
+| Nutzwert        | Drehmoment, Heck-/Allradantrieb, Leiterrahmen, Karosserieform                                      |
+| Offroad         | Bodenfreiheit, Allrad, Reifen, Starrachsen, Überhänge, Sperre                                      |
+| Zuverlässigkeit | Motor, Getriebeart, Qualität, aufwendige Federung                                                  |
+| Prestige        | Innenraum, Unterhaltung, Werkstoffe, Zylinderzahl, Leistung, Qualität, Lack                        |
+
+- **Warnungen:** Motor passt nicht (Länge, Breite, Höhe je Einbaulage), Getriebe überlastet,
+  erster Gang zu lang, Höchstgeschwindigkeit durch Drehzahl begrenzt, zu viel Leistung für
+  Frontantrieb/ohne Traktionskontrolle, Bremsen zu schwach, Überhitzung, Bremsscheibe passt nicht
+  in die Felge, Reifen zu breit, extreme Gewichtsverteilung, starkes Unter-/Übersteuern.
+
+## Simulation (vorbereitet)
+
+`toSimulationInput(car)` liefert flache Daten für eine spätere Fahrsimulation: Masse, Schwerpunkt,
+Gierträgheit, Drehmomentkurve, Übersetzungen, Reifen, Aero-Flächen, Bremskraft, Fahrhilfen.
 
 ## Literatur
 
 - J. B. Heywood: _Internal Combustion Engine Fundamentals_. McGraw-Hill, 1988.
+- W.-H. Hucho (Hrsg.): _Aerodynamik des Automobils_. 6. Aufl., Springer Vieweg, 2013.
+- J. Y. Wong: _Theory of Ground Vehicles_. 4. Aufl., Wiley, 2008.
 - NIST Special Publication 811: _Guide for the Use of the International System of Units_, 2008.
