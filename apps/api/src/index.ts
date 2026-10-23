@@ -2,6 +2,7 @@ import { createApp } from './app';
 import type { Env } from './env';
 import { loadUser, sameOrigin } from './lib/http';
 import { auth } from './routes/auth';
+import { designs } from './routes/designs';
 
 /**
  * API-Worker. Rechnet bewusst nichts Physikalisches (Free Plan: 10 ms CPU pro Request).
@@ -28,6 +29,7 @@ app.get('/api/health', async (c) => {
 
 app.use('/api/*', sameOrigin, loadUser);
 app.route('/', auth);
+app.route('/', designs);
 
 app.notFound((c) => {
   // Share-Seiten (`/v/:id`) bekommen später Open-Graph-Tags; bis dahin die SPA ausliefern.
