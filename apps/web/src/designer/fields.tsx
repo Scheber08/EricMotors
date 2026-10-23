@@ -93,6 +93,11 @@ export function NumberField(
   const digits = props.integer ? 0 : u.digits;
   // Während der Eingabe zeigt das Feld den Entwurf, sonst den formatierten Wert.
   const [draft, setDraft] = useState<string | null>(null);
+  const formatted = display.toLocaleString(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+    useGrouping: false,
+  });
   if (hidden) return null;
 
   const commit = (displayValue: number) => {
@@ -120,8 +125,8 @@ export function NumberField(
             id={id}
             className="input"
             inputMode="decimal"
-            value={draft ?? display.toFixed(digits)}
-            onFocus={() => setDraft(display.toFixed(digits))}
+            value={draft ?? formatted}
+            onFocus={() => setDraft(formatted)}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={() => {
               if (draft !== null) commit(Number(draft.replace(',', '.')));

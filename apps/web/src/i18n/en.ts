@@ -1,4 +1,5 @@
 import type { Dictionary } from './index';
+import { enEngine } from './en-engine';
 
 export const en = {
   app: {
@@ -69,6 +70,12 @@ export const en = {
       'v8-50-na': '5.0 V8',
       'i4-20-diesel': '2.0 turbodiesel',
     },
+  },
+  ...enEngine,
+  errors: {
+    title: 'Something went wrong.',
+    text: 'Your designs are stored locally and are not lost.',
+    reload: 'Reload',
   },
   common: {
     undo: 'Undo',

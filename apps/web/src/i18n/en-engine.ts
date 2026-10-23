@@ -1,0 +1,267 @@
+/** English texts of the engine designer. */
+export const enEngine = {
+  sections: {
+    engine: {
+      block: 'Block',
+      bottomEnd: 'Bottom end',
+      topEnd: 'Top end',
+      aspiration: 'Aspiration',
+      fuel: 'Fuel',
+      exhaust: 'Exhaust',
+      tune: 'Tune',
+    },
+  },
+  params: {
+    engine: {
+      layout: 'Layout',
+      cylinders: 'Cylinders',
+      bankAngle: 'Bank angle',
+      blockMaterial: 'Block material',
+      headMaterial: 'Head material',
+      headType: 'Valvetrain',
+      valvesPerCylinder: 'Valves per cylinder',
+      maxBore: 'Max. bore (block)',
+      maxStroke: 'Max. stroke (block)',
+      quality: 'Quality',
+      bore: 'Bore',
+      stroke: 'Stroke',
+      crankshaft: 'Crankshaft',
+      conrods: 'Conrods',
+      pistons: 'Pistons',
+      compressionRatio: 'Compression ratio',
+      camProfile: 'Cam profile',
+      vvt: 'Variable valve timing (VVT)',
+      vvl: 'Variable valve lift (VVL)',
+      aspirationKind: 'Aspiration',
+      turboCount: 'Number of turbos',
+      turboSize: 'Turbo size',
+      boost: 'Boost',
+      intercooler: 'Intercooler',
+      superchargerType: 'Supercharger type',
+      superchargerSize: 'Supercharger size',
+      fuel: 'Fuel',
+      fuelSystem: 'Fuel system',
+      intakeSize: 'Intake size',
+      headers: 'Headers',
+      exhaustDiameter: 'Exhaust diameter',
+      catalyst: 'Catalytic converter',
+      muffler: 'Muffler',
+      lambda: 'Lambda (full load)',
+      ignitionTiming: 'Ignition timing',
+      revLimit: 'Rev limit',
+    },
+  },
+  options: {
+    material: {
+      'cast-iron': 'Cast iron',
+      cgi: 'Compacted graphite iron',
+      aluminium: 'Aluminium',
+      'aluminium-sleeved': 'Aluminium, sleeved',
+      magnesium: 'Magnesium',
+    },
+    params: {
+      engine: {
+        layout: { inline: 'Inline', v: 'V', boxer: 'Boxer' },
+        headType: { ohv: 'OHV (pushrod)', sohc: 'SOHC (single cam)', dohc: 'DOHC (twin cam)' },
+        crankshaft: {
+          'cast-iron': 'Cast iron',
+          'forged-steel': 'Forged steel',
+          'billet-steel': 'Billet steel',
+        },
+        conrods: {
+          cast: 'Cast',
+          'heavy-cast': 'Heavy-duty cast',
+          forged: 'Forged',
+          titanium: 'Titanium',
+        },
+        pistons: {
+          cast: 'Cast',
+          hypereutectic: 'Hypereutectic',
+          forged: 'Forged',
+          'low-friction': 'Low friction',
+        },
+        aspirationKind: {
+          natural: 'Naturally aspirated',
+          turbo: 'Turbocharged',
+          supercharger: 'Supercharged',
+        },
+        superchargerType: {
+          roots: 'Roots',
+          'twin-screw': 'Twin-screw',
+          centrifugal: 'Centrifugal',
+        },
+        fuel: {
+          regular: 'Regular (RON 91)',
+          premium: 'Premium (RON 95)',
+          super: 'Super (RON 98)',
+          e85: 'E85',
+          diesel: 'Diesel',
+        },
+        fuelSystem: {
+          carburetor: 'Carburettor',
+          'single-point': 'Single-point injection',
+          'multi-point': 'Multi-point injection',
+          direct: 'Direct injection',
+          'diesel-indirect': 'Indirect diesel',
+          'common-rail': 'Common rail',
+        },
+        headers: {
+          cast: 'Cast',
+          'short-tubular': 'Short tubular',
+          'long-tubular': 'Long tubular',
+          'equal-length': 'Equal length',
+        },
+        catalyst: {
+          none: 'None',
+          'two-way': 'Two-way',
+          'three-way': 'Three-way',
+          'high-flow': 'High-flow',
+        },
+        muffler: {
+          none: 'None',
+          'straight-through': 'Straight-through',
+          baffled: 'Baffled',
+          'reverse-flow': 'Reverse-flow',
+        },
+      },
+    },
+  },
+  help: {
+    params: {
+      engine: {
+        layout:
+          'Cylinder arrangement. Inline is compact and cheap, V is short and smooth from six cylinders up, boxer is flat with a low centre of gravity.',
+        cylinders: 'More cylinders run smoother and rev higher but add weight, friction and cost.',
+        bankAngle: 'Angle between the cylinder banks. 90° balances a V8 ideally, 60° a V6.',
+        blockMaterial:
+          'Cast iron is cheap and tough, aluminium saves a lot of weight, magnesium even more – at the cost of durability.',
+        headMaterial: 'Aluminium heads are lighter and dissipate heat better.',
+        headType:
+          'Overhead cams allow higher revs and better breathing; pushrod engines are compact and cheap.',
+        valvesPerCylinder: 'More valves increase the flow area: better breathing at high revs.',
+        maxBore: 'Largest bore the block is designed for. Sets block size, weight and cost.',
+        maxStroke: 'Largest stroke the block is designed for (block height).',
+        quality: 'Higher quality improves reliability and prestige but costs more.',
+        bore: 'Cylinder diameter. A large bore allows large valves and high revs.',
+        stroke: 'Piston travel. A long stroke gives torque but raises piston speed.',
+        crankshaft: 'Forged cranks withstand higher mean effective pressures (boost).',
+        conrods: 'Together with the pistons they set the allowable revs and load.',
+        pistons: 'Forged pistons handle boost and high revs, low-friction pistons save fuel.',
+        compressionRatio:
+          'Higher compression raises efficiency but increases knock. Diesels need at least 14:1.',
+        camProfile:
+          'Mild cams give low-end torque, aggressive cams top-end power – at the cost of smoothness and drivability.',
+        vvt: 'Variable cam phasing widens the usable rev range.',
+        vvl: 'Switchable valve lift improves breathing at high revs.',
+        turboSize: 'Small turbos spool early, large ones make more peak power but with lag.',
+        boost:
+          'Manifold pressure above ambient. More boost means more power but more knock and stress.',
+        intercooler: 'Cools the compressed air: denser charge, less knock.',
+        superchargerSize: 'Larger superchargers deliver more air but take more power to drive.',
+        fuel: 'Higher octane allows more compression and boost. E85 resists knock but carries less energy per litre.',
+        fuelSystem:
+          'Direct injection cools the charge and saves fuel; carburettors are cheap but imprecise.',
+        intakeSize: 'Larger intake paths restrict less at high revs.',
+        headers: 'Tubular headers improve gas exchange, equal-length ones the most.',
+        exhaustDiameter: 'Larger pipes reduce back pressure but are louder and heavier.',
+        catalyst: 'Reduces emissions; the three-way cat needs lambda ≈ 1.',
+        muffler: 'Reverse-flow mufflers are quiet, straight-through ones flow more freely.',
+        lambda:
+          'Air-fuel ratio at full load. Slightly rich (≈ 0.9) gives a petrol engine power and cooling but costs fuel and emissions.',
+        ignitionTiming:
+          'Advancing the spark raises power and efficiency but increases the risk of knock.',
+        revLimit: 'Maximum engine speed. Too high stresses rods and pistons (piston speed).',
+      },
+    },
+  },
+  formula: {
+    params: {
+      engine: {
+        bore: 'V_d = π/4 · B² · s · z',
+        stroke: 'c_m = 2 · s · n',
+        compressionRatio: 'η_i ≈ 0.8 · (1 − ε^(1−κ)),  κ = 1.3',
+        boost: 'T₂ = T₁ · (1 + (Π^((κ−1)/κ) − 1) / η_c)',
+        lambda: 'IMEP = η_i · λ_v · ρ · LHV / (AFR_st · λ)',
+        revLimit: 'FMEP = 0.97 + 0.15·(n/1000) + 0.05·(n/1000)²  [bar]',
+        camProfile: 'λ_v(c_m) bell curve around c_peak = 10 + 7 · cam',
+      },
+    },
+  },
+  stats: {
+    engine: {
+      power: 'Power',
+      torque: 'Torque',
+      displacement: 'Displacement',
+      mass: 'Engine mass',
+      cost: 'Production cost',
+      specific: 'Specific output',
+      bsfc: 'Best BSFC',
+      dimensions: 'L × W × H',
+    },
+  },
+  charts: {
+    torque: 'Torque',
+    power: 'Power',
+    boost: 'Boost',
+    efficiency: 'Volumetric and thermal efficiency',
+    ve: 'Volumetric efficiency',
+    eta: 'Efficiency',
+  },
+  ratings: {
+    engine: {
+      smoothness: 'Smoothness',
+      reliability: 'Reliability',
+      emissions: 'Emissions',
+      responsiveness: 'Responsiveness',
+      economy: 'Economy',
+    },
+  },
+  warnings: {
+    engine: {
+      knock: {
+        text: 'The engine knocks.',
+        fix: 'Lower compression or boost, retard the spark, use higher-octane fuel or direct injection.',
+      },
+      pistonSpeed: {
+        text: 'Piston speed too high.',
+        fix: 'Lower the rev limit, shorten the stroke or fit forged rods/pistons.',
+      },
+      bmep: {
+        text: 'Bottom end overloaded.',
+        fix: 'Fit a forged crank, rods and pistons or reduce boost.',
+      },
+      boreStroke: {
+        text: 'Unusual bore/stroke ratio.',
+        fix: 'Keep stroke/bore between 0.6 and 1.4.',
+      },
+      noIntercooler: {
+        text: 'Boost without intercooler.',
+        fix: 'Increase intercooler size – cooler air makes power and reduces knock.',
+      },
+      revLimitLow: {
+        text: 'Rev limit is below peak power.',
+        fix: 'Raise the rev limit or choose a milder cam.',
+      },
+      dieselRevs: {
+        text: 'Diesel revs too high.',
+        fix: 'Lower the rev limit to 5500 rpm or less.',
+      },
+      dieselCompression: {
+        text: 'Compression too low for compression ignition.',
+        fix: 'Raise compression to at least 14:1.',
+      },
+    },
+  },
+  designer: {
+    sections: 'Sections',
+    variants: 'Variants',
+    addVariant: 'Add variant',
+    renameVariant: 'Rename variant',
+    variantCopy: '{name} 2',
+    ratings: 'Ratings',
+    warnings: 'Notes',
+    noWarnings: 'No problems found.',
+    invalid: 'Invalid – not saved',
+    computeTime: 'Computed in {ms} ms',
+  },
+};

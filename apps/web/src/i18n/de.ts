@@ -1,4 +1,5 @@
 import type { Dictionary } from './index';
+import { deEngine } from './de-engine';
 
 export const de = {
   app: {
@@ -69,6 +70,12 @@ export const de = {
       'v8-50-na': '5.0 V8',
       'i4-20-diesel': '2.0 Turbodiesel',
     },
+  },
+  ...deEngine,
+  errors: {
+    title: 'Hier ist etwas schiefgelaufen.',
+    text: 'Deine Entwürfe sind lokal gespeichert und gehen nicht verloren.',
+    reload: 'Neu laden',
   },
   common: {
     undo: 'Rückgängig',
