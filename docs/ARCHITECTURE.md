@@ -7,7 +7,7 @@ nachgezogen (Abschnitt „Entscheidungslog“ am Ende).
 
 | Prinzip                  | Konsequenz in der Architektur                                                                                                                                                                                                                                     |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ingenieursnah            | Jedes Bauteil über physikalische Parameter (SI). Modelle mit Literaturquelle im Code und in [`MODELS.md`](MODELS.md). Näherungen geben Gültigkeitsbereich und Unsicherheit mit aus.                                                                               |
+| Spielnah, aber plausibel | Bedienung wie _Automation_: Auswahl + Regler statt Rohparameter. Intern SI-Einheiten und einfache physikalische Formeln, dokumentiert in [`MODELS.md`](MODELS.md).                                                                                                |
 | Eine Quelle der Wahrheit | Gespeichert werden **nur Eingabeparameter**. Masse, Schwerpunkt, Leistungskurven usw. berechnet `@ericmotors/physics` deterministisch. Ausnahme: explizite _Overrides_ (z. B. gemessene Masse, cw aus externer CFD) sind selbst Eingaben und als solche markiert. |
 | Alles rechnet im Browser | Physik in Web Workern, 3D in WebGL. Der Cloudflare Worker rechnet **nichts** Physikalisches.                                                                                                                                                                      |
 | Simulationstauglich      | `Vehicle` → `toSimulationInput()` ist eine reine Funktion. Die spätere Simulation konsumiert nur `SimulationInput`.                                                                                                                                               |
@@ -128,89 +128,44 @@ EricMotors/
 Lokale Entwicklung: `npm run dev` startet Vite (Port 5173) und `wrangler dev` (Port 8787)
 parallel; Vite leitet `/api` und `/v` an Wrangler weiter. Wrangler simuliert D1 und R2 lokal.
 
-## 6. Fahrzeugschema (Entwurf)
+## 6. Datenmodell (an _Automation_ angelehnt)
 
-Grundsätze:
+Kurswechsel am 2026-10-23: Bedienung und Rechenlogik orientieren sich an _Automation – The Car
+Company Tycoon Game_. Die Formeln bleiben **spielnah, aber plausibel**: einfache, nachvollziehbare
+Zusammenhänge mit echten Einheiten, keine Detailmodelle (CFD, FEM, Kinematik, Pacejka).
 
-- Alle Größen in SI (m, kg, s, N, W, Pa, K, rad). Anzeigeeinheiten sind eine Nutzereinstellung, nie Teil des Fahrzeugs.
-- Koordinatensystem nach **ISO 8855**: Ursprung Mitte Vorderachse auf Fahrbahnhöhe, x nach vorn, y nach links, z nach oben.
-- Jedes Bauteil hat dieselbe Basis (`ComponentBase`), Parameter sind typspezifisch (diskriminierte Union über `type`).
-- Masse/Trägheit werden berechnet; `massOverride`/`inertiaOverride` sind optionale Eingaben.
-
-```ts
-Vehicle {
-  schemaVersion: number            // Migrationen: v1 → v2 → …
-  id: string                       // UUID (lokal erzeugt)
-  meta: { name, description?, tags[], forkOf?: { vehicleId, ownerName, schemaVersion } }
-  body:       { shape, dimensions, controlPoints, panels[], paint, wheels, interior[], attachments[] }
-  chassis:    { construction, material, sections, components[] }    // Bauraum-Platzierung
-  powertrain: { components[], connections[] }                       // Graph, s. u.
-  drivetrain: { layout, torqueSplit, clutch?, gearbox, differentials[] }
-  suspension: { front, rear, steering }                             // Hardpoints als Vec3
-  brakes:     { front, rear, bias, abs }
-  tires:      { front, rear }                                       // Pacejka-Koeffizienten
-  aero:       { mode: 'estimated' | 'override', elements[], overrides? }
-  systems:    { cooling, exhaust, fuel, electrical, hvac }
-}
-
-ComponentBase {
-  id: string
-  type: string                     // Diskriminator
-  label?: string
-  transform: { position: Vec3, rotation: Quat }    // relativ zum Fahrzeugursprung
-  envelope: { min: Vec3, max: Vec3 }               // Bauraum (lokal) – nur wenn nicht ableitbar
-  material?: MaterialRef
-  massOverride?: number            // kg, ersetzt den berechneten Wert
-  inertiaOverride?: Mat3           // kg·m², um den eigenen Schwerpunkt
-}
-```
-
-### Antrieb als Komponentengraph
+Es gibt zwei eigenständige Dokumenttypen, beide versioniert und mit Zod validiert:
 
 ```
-Energiespeicher ──► Wandler ──► Kraftübertragung ──► Rad
-FuelTank            ICE (Otto/Diesel/Wankel/H2)    Clutch, TorqueConverter
-Battery             ElectricMotor (PSM/ASM/FSM)    Gearbox, Differential
-H2Tank              FuelCell                       Shaft, Reduction
-                    Inverter, DCDC
+Engine (Motor-Bibliothek)                    Car (Auto)
+├─ meta                                      ├─ meta
+├─ family   ← Block: Anordnung, Zylinder,    ├─ model      Karosserieform, Abmessungen, Form-Regler
+│            Bankwinkel, Block-/Kopf-        ├─ chassis    Bauart, Material, Fahrwerkstypen
+│            Material, Ventiltrieb,          ├─ engine     Kopie einer Motorvariante + Herkunft,
+│            max. Bohrung/Hub                │             Einbaulage
+└─ variants[] ← Bohrung, Hub, Kurbeltrieb,   ├─ trim       Karosseriematerial, Innenraum, Unterhaltung,
+               Nockenprofil, VVT/VVL,        │             Sicherheit, Fahrhilfen
+               Aufladung, Gemisch, Abgas,    ├─ drivetrain Getriebeart, Gänge, Achsübersetzung, Differenzial
+               Abstimmung, Qualität          ├─ suspension Federn, Dämpfer, Stabis (Regler), Höhe, Sturz
+                                             ├─ wheels     Felgen, Reifen (Typ, Breite, Querschnitt)
+                                             ├─ brakes     Typ, Größe, Kolben, Belag, Verteilung
+                                             ├─ aero       Abtrieb vorn/hinten, Unterboden, Kühlluft
+                                             └─ paint      Lack, Zonen, Folie, Decals
 ```
 
-`powertrain.connections[]` sind gerichtete Kanten `{ from: portRef, to: portRef, medium }` mit
-`medium ∈ { 'fuel', 'electric', 'mechanical', 'hydrogen' }`. Serieller Hybrid, Parallelhybrid,
-Leistungsverzweigung und Mehrmotor-E-Autos sind damit nur unterschiedliche Graphen. Die
-Betriebsstrategie ist ein Parameterblock am Graphen, kein Code.
-
-### Beispiel: Ottomotor (Ausschnitt Phase 1)
-
-```ts
-IceEngine extends ComponentBase {
-  type: 'ice'
-  fuel: 'gasoline' | 'diesel' | 'e85' | 'hydrogen'
-  cycle: 'otto' | 'diesel'
-  layout: { arrangement: 'inline' | 'v' | 'boxer' | 'w', cylinders: number, bankAngle?: number }
-  bore: number; stroke: number; conrodLength: number   // m
-  compressionRatio: number
-  valvetrain: { valvesPerCylinder, intakeOpen, intakeClose, exhaustOpen, exhaustClose, variableTiming }
-  intake: { runnerLength, runnerDiameter, plenumVolume, throttleDiameter }
-  exhaust: { headerLength, headerDiameter, backpressureCoeff }
-  induction: { kind: 'na' } | { kind: 'turbo', count, boost, compressorMap, turbineMap, intercooler? } | { kind: 'supercharger', … }
-  mixture: 'port' | 'direct' | 'carburetor'
-  ignition: { sparkAdvanceMap? }
-  revLimit: number                                      // rad/s
-  materials: { block, head, crank, conrods, pistons }
-}
-```
-
-Schema-Migrationen: `migrate(raw: unknown): Vehicle` liest `schemaVersion` und wendet die Schritte
-nacheinander an. Der Worker validiert Uploads mit demselben Schema (Zod, nur Struktur und Grenzen,
-keine Physik).
-
-### SimulationInput (nur Schnittstelle, spätere Phase)
-
-`toSimulationInput(vehicle) → SimulationInput` erzeugt flache, vorberechnete Daten:
-Starrkörper (Masse, Schwerpunkt, Trägheitstensor), Radaufhängungen als Kennlinien bzw. Hardpoints,
-Reifen-Koeffizienten, Motor- und Wirkungsgradkennfelder als Tabellen, Getriebeübersetzungen und
-Trägheiten, Aero-Beiwerte pro Achse, Bremsmomente. Alles `Float64Array`-freundlich für WASM.
+- **Qualitätsregler:** Jeder Abschnitt hat einen Regler von −5 bis +5. Höhere Qualität erhöht
+  Zuverlässigkeit und Wertigkeit, kostet mehr und wiegt leicht anders.
+- **Motor im Auto:** Das Auto speichert eine _Kopie_ der eingebauten Variante plus Verweis
+  `{ engineId, variantId }`. Damit ist jedes Auto eigenständig teilbar und simulierbar. Ändert sich
+  der Motor in der Bibliothek, bietet die Oberfläche ein Update an.
+- **Abgeleitete Werte** (nie gespeichert): Leistungs-/Drehmomentkurve, Verbrauch, Masse,
+  Gewichtsverteilung, cw·A, 0–100 km/h, Höchstgeschwindigkeit, Bremsweg, Querbeschleunigung,
+  Kosten und die Ratings.
+- **Ratings (0–100):** Motor: Laufruhe, Zuverlässigkeit, Emissionen, Ansprechverhalten.
+  Auto: Fahrbarkeit, Sportlichkeit, Komfort, Sicherheit, Praktikabilität, Nutzwert, Offroad,
+  Zuverlässigkeit, Prestige.
+- **Simulation (später):** `toSimulationInput(car)` erzeugt Masse, Schwerpunkt, Trägheit,
+  Drehmomentkurve, Übersetzungen, Reifengrip, Aero-Beiwerte und Bremsmomente als Tabellen.
 
 ## 7. Datenbankschema (D1)
 
@@ -228,6 +183,7 @@ vehicles(
   like_count INTEGER DEFAULT 0, report_count INTEGER DEFAULT 0, hidden INTEGER DEFAULT 0,
   created_at INTEGER, updated_at INTEGER, published_at INTEGER
 )
+engines(…)                   -- gleiche Struktur wie vehicles, eigene Galerie-Indizes (Migration 0002)
 vehicle_tags(vehicle_id, tag, PK(tag, vehicle_id))
 likes(user_id, vehicle_id, created_at, PK(user_id, vehicle_id))
 reports(id PK, vehicle_id, reporter_id, reason, created_at, UNIQUE(vehicle_id, reporter_id))
@@ -264,28 +220,25 @@ Jeder schreibende Endpoint: Rate-Limit-Binding (pro Nutzer), Größenlimit, Orig
 
 ## 9. Phasenplan
 
-| Phase                      | Inhalt                                                                                                                                                                                                                                                                                                                                                | Ergebnis                                    |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| **0 – Grundgerüst**        | Monorepo, Vite-SPA, Hono-Worker mit `/api/health`, `wrangler.jsonc`, erste D1-Migration, CI, Deploy-Anleitung                                                                                                                                                                                                                                         | „Hello World“ in Produktion und als Preview |
-| **1 – MVP**                | Schema v1 + Migrationen, IndexedDB-Speicherung, Undo/Redo, parametrische Karosserie (8 Grundformen) mit Lack, Verbrenner (Otto/Diesel) mit 0D-Motormodell, Drehmoment-/Leistungskurve, Getriebe + Achsübersetzung, Zugkraftdiagramm, Massenbilanz/Schwerpunkt, Live-Kennzahlen, Plausibilitätsprüfungen, Einsteiger/Ingenieur-Modus, de/en, Dark Mode | Fahrzeug lokal konstruierbar                |
-| 2 – Accounts & Community   | OAuth, Cloud-Speichern, Galerie, Detailseite, Fork, Likes, Meldungen, OG-Bilder                                                                                                                                                                                                                                                                       | öffentliche Website                         |
-| 3 – Elektro                | E-Maschinen, Inverter, Batterie, Untersetzung                                                                                                                                                                                                                                                                                                         | BEV                                         |
-| 4 – Hybrid & Exoten        | Topologien, Betriebsstrategie, Wankel, H2, Brennstoffzelle                                                                                                                                                                                                                                                                                            | alle Antriebsarten                          |
-| 5 – Fahrwerk               | Hardpoint-Kinematik, Federn/Dämpfer/Stabis, Lenkung                                                                                                                                                                                                                                                                                                   | Kinematikkurven                             |
-| 6 – Reifen & Bremsen       | Pacejka MF, Bremsauslegung, Fading                                                                                                                                                                                                                                                                                                                    | –                                           |
-| 7 – Aero & Baukasten       | Anbauteile mit Ankerpunkten, Aero-Näherung, Flügelprofile                                                                                                                                                                                                                                                                                             | –                                           |
-| 8 – Chassis & Nebensysteme | Steifigkeits-Ersatzmodell, Kühlung, Bordnetz                                                                                                                                                                                                                                                                                                          | –                                           |
-| 9 – Simulation             | `SimulationInput`, 0–100, Vmax, Bremsweg, später Rundenzeit                                                                                                                                                                                                                                                                                           | –                                           |
+| Phase                    | Inhalt                                                                                                                                                                                                                                                                                                                                           | Ergebnis                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| **0 – Grundgerüst**      | Monorepo, Vite-SPA, Hono-Worker mit `/api/health`, `wrangler.jsonc`, erste D1-Migration, CI, Deploy-Anleitung                                                                                                                                                                                                                                    | „Hello World“ in Produktion und als Preview |
+| **1 – MVP**              | Schemas `Engine` und `Car`, IndexedDB-Speicherung, Undo/Redo, Motor-Designer (Verbrenner Otto/Diesel) mit Leistungs-/Drehmomentkurve und Motor-Ratings, Auto-Designer mit parametrischer Karosserie und Lack, Getriebe, Kennzahlen (Masse, 0–100, Vmax, Verbrauch, Kosten) und Auto-Ratings, Plausibilitätswarnungen, Vorlagen, de/en, Dark Mode | Motor und Auto lokal konstruierbar          |
+| 2 – Accounts & Community | OAuth, Cloud-Speichern, Galerie für Autos und Motoren, Detailseite, Fork, Likes, Meldungen, OG-Bilder                                                                                                                                                                                                                                            | öffentliche Website                         |
+| 3 – Feinschliff Auto     | Anbauteile (Spoiler, Schürzen, Leuchten) an Ankerpunkten, Testfahrt-Kennzahlen, Vergleichsansicht                                                                                                                                                                                                                                                | –                                           |
+| 4 – Elektro & Hybrid     | E-Motor, Batterie, Hybrid als zusätzliche Antriebsart im gleichen Bedienschema                                                                                                                                                                                                                                                                   | weitere Antriebe                            |
+| 5 – Simulation           | `SimulationInput`, Fahrsimulation im Web Worker, Rundenzeit auf Teststrecken                                                                                                                                                                                                                                                                     | –                                           |
 
 Jede Phase endet mit lauffähigem, getestetem Stand auf `main`.
 
 ## 10. Entscheidungslog
 
-| Datum      | Entscheidung                                                                                                                                                              | Status      |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| 2026-10-23 | Ein Worker mit Static Assets statt Pages (Cloudflare empfiehlt Workers für neue Full-Stack-Projekte; Previews, D1, R2 und Rate Limiting stehen dort direkt zur Verfügung) | beschlossen |
-| 2026-10-23 | Zustand + zundo statt Redux Toolkit                                                                                                                                       | beschlossen |
-| 2026-10-23 | uPlot für Diagramme                                                                                                                                                       | beschlossen |
-| 2026-10-23 | Preview-Umgebung über Worker Previews (`previews`-Block) statt Wrangler-Environments                                                                                      | beschlossen |
-| 2026-10-23 | Lizenz AGPL-3.0-only                                                                                                                                                      | beschlossen |
-| 2026-10-23 | Produktions-Domain `car.scheber.com` (Custom Domain am Worker)                                                                                                            | beschlossen |
+| Datum      | Entscheidung                                                                                                                                                                                | Status      |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| 2026-10-23 | Ein Worker mit Static Assets statt Pages (Cloudflare empfiehlt Workers für neue Full-Stack-Projekte; Previews, D1, R2 und Rate Limiting stehen dort direkt zur Verfügung)                   | beschlossen |
+| 2026-10-23 | Zustand + zundo statt Redux Toolkit                                                                                                                                                         | beschlossen |
+| 2026-10-23 | uPlot für Diagramme                                                                                                                                                                         | beschlossen |
+| 2026-10-23 | Preview-Umgebung über Worker Previews (`previews`-Block) statt Wrangler-Environments                                                                                                        | beschlossen |
+| 2026-10-23 | Lizenz AGPL-3.0-only                                                                                                                                                                        | beschlossen |
+| 2026-10-23 | Produktions-Domain `car.scheber.com` (Custom Domain am Worker)                                                                                                                              | beschlossen |
+| 2026-10-23 | Kurswechsel: Bedienung und Logik an _Automation_ angelehnt, spielnah statt ingenieursnah; Motor-Bibliothek (Familie → Varianten), Qualitätsregler, Kosten, Ratings; zunächst nur Verbrenner | beschlossen |
