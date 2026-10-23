@@ -15,3 +15,4 @@ export * from './modules/brakes';
 export * from './modules/tires';
 export * from './modules/aero';
 export * from './modules/systems';
+export * from './templates';
