@@ -49,3 +49,17 @@ describe('Karosseriegeometrie', () => {
     expect(buildBody(CAR_TEMPLATES['diesel-wagon']()).groups.roof?.length).toBeGreaterThan(0);
   });
 });
+
+describe('Querschnitte', () => {
+  it('Unterboden-Innenkante liegt immer innerhalb der Karosseriebreite', () => {
+    for (const build of Object.values(CAR_TEMPLATES)) {
+      const mesh = buildBody(build());
+      // Ringe des Unterbaus: 19 Punkte; Punkt 1 ist die Innenkante, Punkt 3 die Außenkante unten.
+      for (let r = 0; r < 73; r++) {
+        const inner = mesh.positions[(r * 19 + 1) * 3 + 1]!;
+        const outer = mesh.positions[(r * 19 + 3) * 3 + 1]!;
+        expect(inner).toBeLessThanOrEqual(outer + 1e-9);
+      }
+    }
+  });
+});

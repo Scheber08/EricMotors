@@ -132,7 +132,8 @@ export function profileTop(car: Car, l: BodyLayout, x: number): number {
   const pts: [number, number][] = l.open
     ? [
         [l.xFront, noseZ],
-        [l.xFront - 0.25, l.hoodZ - 0.03],
+        [l.xFront - 0.07, noseZ + 0.05],
+        [l.xFront - 0.35, lerp(noseZ, l.hoodZ, 0.8)],
         [l.cowlX, l.hoodZ],
         [l.cowlX - 0.15, l.beltZ],
         [l.rearWindowX, l.beltZ],
@@ -142,7 +143,8 @@ export function profileTop(car: Car, l: BodyLayout, x: number): number {
     : car.model.shape === 'pickup'
       ? [
           [l.xFront, noseZ],
-          [l.xFront - 0.25, l.hoodZ - 0.02],
+          [l.xFront - 0.07, noseZ + 0.07],
+          [l.xFront - 0.3, lerp(noseZ, l.hoodZ, 0.9)],
           [l.cowlX, l.hoodZ],
           [l.windshieldTopX, l.roofZ],
           [l.roofEndX, l.roofZ],
@@ -151,7 +153,8 @@ export function profileTop(car: Car, l: BodyLayout, x: number): number {
         ]
       : [
           [l.xFront, noseZ],
-          [l.xFront - 0.25, l.hoodZ - 0.03],
+          [l.xFront - 0.07, noseZ + 0.06],
+          [l.xFront - 0.35, lerp(noseZ, l.hoodZ, 0.82)],
           [l.cowlX, l.hoodZ],
           [l.windshieldTopX, l.roofZ],
           [l.roofEndX, l.roofZ],
@@ -180,7 +183,7 @@ export function halfWidth(car: Car, l: BodyLayout, x: number): number {
   const center = (l.xFront + l.xRear) / 2;
   const half = (l.xFront - l.xRear) / 2;
   const t = clamp(Math.abs(x - center) / half, 0, 1);
-  const rounded = Math.pow(1 - Math.pow(t, 7), 1 / 7);
+  const rounded = Math.pow(1 - Math.pow(t, 4.5), 1 / 4.5);
   const front = x > center ? 1 - 0.18 * m.frontTaper * smooth((x - center) / half) : 1;
   const rear = x < center ? 1 - 0.14 * m.rearTaper * smooth((center - x) / half) : 1;
   return Math.max(0.02, (W / 2) * rounded * front * rear);
@@ -260,9 +263,10 @@ export function buildBody(car: Car, stations = 72): BodyMesh {
     const floor =
       l.rideHeight + (x > l.xFront - 0.25 ? 0.06 * smooth((x - (l.xFront - 0.25)) / 0.25) : 0);
     const side = Math.min(top - 0.03, sideBottom(l, x, m.archFlare));
-    const inner = Math.max(
-      0.05,
-      Math.min(...l.wheels.map((w) => w.track / 2 - w.width / 2 - 0.04)),
+    // Innenkante des Radhauses; an den gerundeten Enden nie breiter als die Karosserie selbst.
+    const inner = Math.min(
+      hw * 0.8,
+      Math.max(0.05, Math.min(...l.wheels.map((w) => w.track / 2 - w.width / 2 - 0.04))),
     );
     const flare = 0.02 * m.archFlare;
     const shoulder = hw * 0.97;
@@ -271,7 +275,7 @@ export function buildBody(car: Car, stations = 72): BodyMesh {
       [0, floor],
       [inner, floor],
       [inner, side],
-      [hw - 0.01, side],
+      [Math.max(inner, hw - 0.01), side],
       [hw + flare, lerp(side, top, 0.25)],
       [hw + flare * 0.5, lerp(side, top, 0.55)],
       [shoulder, lerp(side, top, 0.85)],
