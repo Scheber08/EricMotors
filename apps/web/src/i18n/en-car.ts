@@ -3,7 +3,8 @@ export const enCar = {
   sections: {
     car: {
       model: 'Model',
-      engine: 'Engine',
+      powertrain: 'Powertrain',
+      engine: 'Combustion engine',
       trim: 'Trim',
       drivetrain: 'Drivetrain',
       suspension: 'Suspension',
@@ -15,6 +16,20 @@ export const enCar = {
   },
   params: {
     car: {
+      powertrainType: 'Powertrain type',
+      plugIn: 'Plug-in (charge from the grid)',
+      motorPosition: 'Position',
+      motorCount: 'Count',
+      motorType: 'Motor type',
+      peakPower: 'Peak power per motor',
+      motorMaxSpeed: 'Maximum speed',
+      reduction: 'Reduction ratio',
+      motorCooling: 'Motor cooling',
+      chemistry: 'Cell chemistry',
+      cells: 'Cell design',
+      capacity: 'Capacity (usable)',
+      voltage: 'Voltage',
+      batteryCooling: 'Battery cooling',
       shape: 'Body style',
       length: 'Length',
       width: 'Width',
@@ -108,6 +123,15 @@ export const enCar = {
     paintZone: { roof: 'Contrast roof', hood: 'Contrast bonnet', lower: 'Contrast sills/bumpers' },
     params: {
       car: {
+        powertrainType: { ice: 'Combustion', electric: 'Electric', hybrid: 'Hybrid' },
+        motorPosition: { front: 'Front axle', rear: 'Rear axle', gearbox: 'At gearbox' },
+        motorCount: { 1: 'One motor', 2: 'One per wheel' },
+        motorType: { pmsm: 'PM synchronous', induction: 'Induction', 'axial-flux': 'Axial flux' },
+        motorCooling: { air: 'Air', liquid: 'Water', 'oil-spray': 'Oil spray' },
+        chemistry: { lfp: 'LFP', nmc: 'NMC', nca: 'NCA', 'solid-state': 'Solid state' },
+        cells: { energy: 'Energy', balanced: 'Balanced', power: 'Power' },
+        voltage: { '400V': '400 V', '800V': '800 V' },
+        batteryCooling: { passive: 'Passive', air: 'Air', liquid: 'Liquid' },
         shape: {
           coupe: 'Coupé',
           sedan: 'Sedan',
@@ -215,6 +239,24 @@ export const enCar = {
   help: {
     params: {
       car: {
+        powertrainType:
+          'Combustion engine from the engine library, pure electric drive or parallel hybrid (engine plus electric motor).',
+        plugIn:
+          'Plug-in hybrids have a large battery and often drive electrically day to day, which strongly lowers rated consumption.',
+        motorPosition:
+          'On an axle with its own reduction gear or (hybrid only) between engine and gearbox.',
+        motorCount:
+          'One motor per wheel enables torque vectoring: more traction and cornering grip.',
+        motorType:
+          'Permanent magnet: efficient. Induction: cheap, no magnets. Axial flux: very light and strong, but expensive.',
+        reduction:
+          'A short reduction (high number) accelerates harder but limits top speed through motor speed.',
+        chemistry:
+          'LFP: cheap and durable, heavy. NMC/NCA: high energy density. Solid state: light and fast charging, expensive.',
+        cells:
+          'Energy cells store more per kg, power cells deliver much more power (sports cars, hybrids).',
+        capacity: 'More capacity adds range and power but costs weight and money.',
+        voltage: '800 volts doubles the fast-charging power.',
         shape: 'Basic body style. Sets roof line, rear end and base drag coefficient.',
         wheelbase: 'Distance between the axles. Long = stable and roomy, short = agile.',
         chassis:
@@ -426,6 +468,13 @@ export const enCar = {
     misc: 'Other',
   },
   designer: {
+    addMotor: 'Electric motor {position}',
+    removeMotor: 'Remove motor',
+    motorTitle: 'Electric motor · {position}',
+    battery: 'Battery',
+    powertrainDiagram: 'Powertrain layout, top view',
+    systemPower: 'system power',
+    batteryPower: 'Battery max. {value}',
     view: 'View',
     views: { normal: 'Normal', xray: 'X-ray', exploded: 'Exploded' },
     shape: 'Shape',

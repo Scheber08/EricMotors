@@ -1,21 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import type { CarAnalysis } from '@ericmotors/physics';
-import {
-  BodyShape,
-  Car,
-  type CarEngine,
-  ENGINE_TEMPLATES,
-  type Engine,
-  type EngineTemplateId,
-  carEngineFrom,
-} from '@ericmotors/schema';
-import { ENGINE_TEMPLATE_IDS } from '../app/templates';
+import { BodyShape, Car } from '@ericmotors/schema';
 import { useLocale, useT } from '../i18n';
 import { setPath } from '../lib/path';
 import { useCarDocument, useHistory } from '../state/document';
 import { useSettings } from '../state/settings';
-import { type DocSummary, garage, newId } from '../storage/db';
+import { garage } from '../storage/db';
 import { formatQuantity, unitFor } from '../units/format';
 import { useCarAnalysis } from '../workers/usePhysics';
 import { Chart } from './Chart';
@@ -36,12 +27,13 @@ import {
 } from './fields';
 import { RatingBars, Stat, WarningList } from './Stats';
 import { useAutosave } from './useAutosave';
+import { PowertrainSection } from './car/PowertrainSection';
 
 const CarViewer = lazy(() => import('./car/CarViewer').then((m) => ({ default: m.CarViewer })));
 
 const SECTIONS = [
   'model',
-  'engine',
+  'powertrain',
   'trim',
   'drivetrain',
   'suspension',
@@ -59,7 +51,7 @@ const deg = (x: number) => (x * Math.PI) / 180;
 /** Abschnitt, zu dem eine Warnung gehört (aus dem Pfad). */
 function sectionOf(path: string): Section {
   const head = path.split('.')[0]!;
-  if (head === 'engine' || head === 'powertrain') return 'engine';
+  if (head === 'engine' || head === 'powertrain') return 'powertrain';
   if (head === 'aero') return 'aero';
   return (SECTIONS as readonly string[]).includes(head) ? (head as Section) : 'model';
 }
@@ -175,12 +167,22 @@ export function CarDesigner({ id }: { id: string }) {
           />
         </div>
       }
-      params={<CarParams section={section} car={car} ctx={ctx} />}
+      params={<CarParams section={section} car={car} ctx={ctx} analysis={analysis.result} />}
     />
   );
 }
 
-function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: FieldContext }) {
+function CarParams({
+  section,
+  car,
+  ctx,
+  analysis,
+}: {
+  section: Section;
+  car: Car;
+  ctx: FieldContext;
+  analysis: CarAnalysis | undefined;
+}) {
   const t = useT();
   const { update } = useCarDocument.getState();
   const dt = car.drivetrain;
@@ -276,10 +278,8 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
           </FieldGroup>
         </>
       );
-    case 'engine':
-      return car.powertrain.engine ? (
-        <EngineSection car={car} engine={car.powertrain.engine} ctx={ctx} />
-      ) : null;
+    case 'powertrain':
+      return <PowertrainSection car={car} ctx={ctx} analysis={analysis} />;
     case 'trim':
       return (
         <FieldGroup title={t('sections.car.trim')}>
@@ -587,176 +587,6 @@ function PaintSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
         {car.paint.wrap && layerFields('paint.wrap', car.paint.wrap.finish)}
       </FieldGroup>
     </>
-  );
-}
-
-/** Motorwahl: aus der eigenen Motor-Bibliothek oder einer Vorlage, plus Einbaulage. */
-function EngineSection({
-  car,
-  engine: carEngine,
-  ctx,
-}: {
-  car: Car;
-  engine: CarEngine;
-  ctx: FieldContext;
-}) {
-  const t = useT();
-  const locale = useLocale();
-  const { update } = useCarDocument.getState();
-  const [library, setLibrary] = useState<DocSummary[]>([]);
-  const [selected, setSelected] = useState<Engine | undefined>();
-  useEffect(() => {
-    void garage.listEngines().then(setLibrary);
-  }, []);
-  useEffect(() => {
-    const engineId = carEngine.source?.engineId;
-    if (!engineId) return;
-    void garage.loadEngine(engineId).then(setSelected);
-  }, [carEngine.source?.engineId]);
-
-  const install = (engine: Engine, variantId: string) => {
-    const index = Math.max(
-      0,
-      engine.variants.findIndex((v) => v.id === variantId),
-    );
-    update((d) => {
-      d.powertrain.engine = carEngineFrom(engine, d.powertrain.engine!.placement, index);
-    });
-  };
-  const onPick = async (value: string) => {
-    if (value.startsWith('template:')) {
-      const engine = ENGINE_TEMPLATES[value.slice(9) as EngineTemplateId]();
-      install(engine, engine.variants[0]!.id);
-      setSelected(undefined);
-    } else if (value) {
-      const engine = await garage.loadEngine(value);
-      if (engine) {
-        setSelected(engine);
-        install(engine, engine.variants[0]!.id);
-      }
-    }
-  };
-  const libraryVariant = selected?.variants.find((v) => v.id === carEngine.source?.variantId);
-  const fam = carEngine.family;
-  const liters = (
-    (Math.PI / 4) *
-    carEngine.variant.bore ** 2 *
-    carEngine.variant.stroke *
-    fam.cylinders *
-    1000
-  ).toFixed(1);
-  const summary = `${t('designer.engineSummary', {
-    layout: t(`options.params.engine.layout.${fam.layout}`),
-    cylinders: fam.cylinders,
-    liters: Number(liters).toLocaleString(locale, { minimumFractionDigits: 1 }),
-  })} · ${carEngine.variant.name}`;
-  const adopt = async () => {
-    const engine: Engine = {
-      schemaVersion: 1,
-      kind: 'engine',
-      id: newId(),
-      meta: { name: t('designer.engineOf', { name: car.meta.name }), description: '', tags: [] },
-      family: structuredClone(carEngine.family),
-      variants: [structuredClone(carEngine.variant)],
-    };
-    await garage.saveEngine(engine);
-    setSelected(engine);
-    setLibrary(await garage.listEngines());
-    update(
-      (d) =>
-        (d.powertrain.engine!.source = { engineId: engine.id, variantId: engine.variants[0]!.id }),
-    );
-  };
-  const outdated =
-    !!libraryVariant && JSON.stringify(libraryVariant) !== JSON.stringify(carEngine.variant);
-
-  return (
-    <FieldGroup title={t('sections.car.engine')}>
-      <div className="engine-summary card">
-        <strong>{selected?.meta.name ?? t('designer.embeddedEngine')}</strong>
-        <span className="muted">{summary}</span>
-        {!selected && (
-          <button type="button" className="btn small" onClick={() => void adopt()}>
-            {t('designer.adoptEngine')}
-          </button>
-        )}
-        {carEngine.source && selected && (
-          <Link className="btn small" href={`/engine/${selected.id}`}>
-            {t('designer.editEngine')}
-          </Link>
-        )}
-        {outdated && selected && (
-          <button
-            type="button"
-            className="btn small primary"
-            onClick={() => install(selected, libraryVariant.id)}
-          >
-            {t('designer.updateEngine')}
-          </button>
-        )}
-      </div>
-      <div className="field">
-        <div className="field-label">
-          <label htmlFor="engine-pick">{t('designer.chooseEngine')}</label>
-        </div>
-        <select
-          id="engine-pick"
-          className="select"
-          value=""
-          onChange={(e) => void onPick(e.target.value)}
-        >
-          <option value="">…</option>
-          {library.length > 0 && (
-            <optgroup label={t('garage.engines')}>
-              {library.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          <optgroup label={t('home.templates')}>
-            {ENGINE_TEMPLATE_IDS.map((id) => (
-              <option key={id} value={`template:${id}`}>
-                {t(`templates.engine.${id}`)}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-      </div>
-      {selected && selected.variants.length > 1 && (
-        <div className="field">
-          <div className="field-label">
-            <label htmlFor="variant-pick">{t('designer.variants')}</label>
-          </div>
-          <select
-            id="variant-pick"
-            className="select"
-            value={carEngine.source?.variantId}
-            onChange={(e) => install(selected, e.target.value)}
-          >
-            {selected.variants.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      <CardField
-        ctx={ctx}
-        path="powertrain.engine.placement"
-        options={
-          [
-            'front-longitudinal',
-            'front-transverse',
-            'mid-longitudinal',
-            'mid-transverse',
-            'rear-longitudinal',
-          ] satisfies CarEngine['placement'][]
-        }
-      />
-    </FieldGroup>
   );
 }
 

@@ -3,9 +3,10 @@ export const deCar = {
   sections: {
     car: {
       model: 'Modell',
-      engine: 'Motor',
+      powertrain: 'Antrieb',
+      engine: 'Verbrennungsmotor',
       trim: 'Ausstattung',
-      drivetrain: 'Antrieb',
+      drivetrain: 'Kraftübertragung',
       suspension: 'Fahrwerk',
       wheels: 'Räder',
       brakes: 'Bremsen',
@@ -15,6 +16,20 @@ export const deCar = {
   },
   params: {
     car: {
+      powertrainType: 'Antriebsart',
+      plugIn: 'Plug-in (an der Steckdose ladbar)',
+      motorPosition: 'Einbauort',
+      motorCount: 'Anzahl',
+      motorType: 'Motorbauart',
+      peakPower: 'Spitzenleistung je Motor',
+      motorMaxSpeed: 'Höchstdrehzahl',
+      reduction: 'Untersetzung',
+      motorCooling: 'Motorkühlung',
+      chemistry: 'Zellchemie',
+      cells: 'Zellauslegung',
+      capacity: 'Kapazität (nutzbar)',
+      voltage: 'Spannungsebene',
+      batteryCooling: 'Batteriekühlung',
       shape: 'Grundform',
       length: 'Länge',
       width: 'Breite',
@@ -112,6 +127,15 @@ export const deCar = {
     },
     params: {
       car: {
+        powertrainType: { ice: 'Verbrenner', electric: 'Elektro', hybrid: 'Hybrid' },
+        motorPosition: { front: 'Vorderachse', rear: 'Hinterachse', gearbox: 'Am Getriebe' },
+        motorCount: { 1: 'Ein Motor', 2: 'Je Rad einer' },
+        motorType: { pmsm: 'PM-Synchron', induction: 'Asynchron', 'axial-flux': 'Axialfluss' },
+        motorCooling: { air: 'Luft', liquid: 'Wasser', 'oil-spray': 'Ölsprüh' },
+        chemistry: { lfp: 'LFP', nmc: 'NMC', nca: 'NCA', 'solid-state': 'Festkörper' },
+        cells: { energy: 'Energie', balanced: 'Ausgewogen', power: 'Leistung' },
+        voltage: { '400V': '400 V', '800V': '800 V' },
+        batteryCooling: { passive: 'Passiv', air: 'Luft', liquid: 'Flüssig' },
         shape: {
           coupe: 'Coupé',
           sedan: 'Limousine',
@@ -223,6 +247,23 @@ export const deCar = {
   help: {
     params: {
       car: {
+        powertrainType:
+          'Verbrenner aus der Motor-Bibliothek, reiner Elektroantrieb oder Parallelhybrid (Verbrenner plus E-Motor).',
+        plugIn:
+          'Plug-in-Hybride haben eine große Batterie und fahren im Alltag oft elektrisch – das senkt den Normverbrauch stark.',
+        motorPosition:
+          'An einer Achse mit eigener Untersetzung oder (nur Hybrid) zwischen Verbrenner und Getriebe.',
+        motorCount: 'Je Rad ein Motor ermöglicht Torque Vectoring: mehr Traktion und Kurvengrip.',
+        motorType:
+          'Permanentmagnet: effizient. Asynchron: günstig, ohne Magnete. Axialfluss: sehr leicht und stark, aber teuer.',
+        reduction:
+          'Kurze Untersetzung (hohe Zahl) beschleunigt stärker, begrenzt aber die Höchstgeschwindigkeit über die Motordrehzahl.',
+        chemistry:
+          'LFP: günstig und langlebig, schwer. NMC/NCA: hohe Energiedichte. Festkörper: leicht und schnellladefähig, teuer.',
+        cells:
+          'Energiezellen speichern mehr pro kg, Leistungszellen geben viel mehr Leistung ab (Sportwagen, Hybride).',
+        capacity: 'Mehr Kapazität bringt Reichweite und Leistung, kostet aber Gewicht und Geld.',
+        voltage: '800 Volt verdoppelt die Schnellladeleistung.',
         shape: 'Grundform der Karosserie. Bestimmt Dachlinie, Heck und Grund-cw-Wert.',
         wheelbase: 'Abstand der Achsen. Lang = ruhiger Geradeauslauf und Platz, kurz = wendig.',
         chassis:
@@ -434,6 +475,13 @@ export const deCar = {
     misc: 'Sonstiges',
   },
   designer: {
+    addMotor: 'E-Motor {position}',
+    removeMotor: 'Motor entfernen',
+    motorTitle: 'E-Motor · {position}',
+    battery: 'Batterie',
+    powertrainDiagram: 'Antriebs-Schema in Draufsicht',
+    systemPower: 'Systemleistung',
+    batteryPower: 'Batterie max. {value}',
     view: 'Ansicht',
     views: { normal: 'Normal', xray: 'Röntgen', exploded: 'Explosion' },
     shape: 'Form',

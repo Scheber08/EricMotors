@@ -33,6 +33,9 @@ export type Quantity =
   | 'distance'
   | 'longDistance'
   | 'consumption'
+  | 'energy'
+  | 'electricConsumption'
+  | 'minutes'
   | 'co2'
   | 'angle'
   | 'percent'
@@ -109,6 +112,13 @@ export function unitFor(q: Quantity, ctx: UnitContext): UnitDef {
             fromDisplay: (mpg) => (mpg > 0 ? (3.785411784e-3 * 1) / (mpg * M_PER_MI) : 0),
             digits: 1,
           };
+    case 'energy':
+      return lin('kWh', 3.6e6, 1);
+    case 'electricConsumption':
+      // SI: J/m. kWh/100 km bzw. kWh/100 mi.
+      return metric ? lin('kWh/100 km', 36, 1) : lin('kWh/100 mi', 3.6e6 / (100 * M_PER_MI), 1);
+    case 'minutes':
+      return lin('min', 60, 0);
     case 'co2':
       return metric ? lin('g/km', 1e-6, 0) : lin('g/mi', 1e-3 / M_PER_MI, 0);
     case 'angle':

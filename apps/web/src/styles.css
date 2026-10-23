@@ -980,6 +980,8 @@ textarea {
   grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
 }
 .option-card {
+  overflow-wrap: anywhere;
+  hyphens: auto;
   display: grid;
   justify-items: center;
   align-content: start;
@@ -1019,4 +1021,142 @@ textarea {
   font-size: 10.5px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Antriebs-Schema ---------- */
+
+.powertrain-diagram {
+  margin: 0 0 8px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+.powertrain-diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.pd-body {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+.pd-dir {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.pd-wheel {
+  fill: var(--muted);
+  opacity: 0.45;
+}
+.pd-wheel.driven {
+  fill: var(--fg);
+  opacity: 0.9;
+}
+.pd-shaft {
+  stroke: var(--border);
+  stroke-width: 2;
+  fill: none;
+}
+.pd-shaft.driven {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+.pd-part {
+  cursor: pointer;
+  outline: none;
+}
+.pd-part:hover > :first-child,
+.pd-part:focus-visible > :first-child {
+  stroke-width: 3;
+}
+.pd-engine rect {
+  fill: color-mix(in srgb, var(--chart-1) 25%, var(--surface));
+  stroke: var(--chart-1);
+  stroke-width: 1.5;
+}
+.pd-engine circle {
+  fill: var(--chart-1);
+}
+.pd-gearbox {
+  fill: var(--surface-2);
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.pd-tank {
+  fill: none;
+  stroke: var(--chart-1);
+  stroke-dasharray: 3 2;
+  stroke-width: 1.5;
+}
+.pd-motor circle {
+  fill: color-mix(in srgb, var(--chart-2) 25%, var(--surface));
+  stroke: var(--chart-2);
+  stroke-width: 1.5;
+}
+.pd-bolt {
+  fill: none;
+  stroke: var(--chart-2);
+  stroke-width: 1.5;
+}
+.pd-battery rect {
+  fill: color-mix(in srgb, var(--chart-3) 22%, var(--surface));
+  stroke: var(--chart-3);
+  stroke-width: 1.5;
+}
+.pd-cell {
+  stroke: var(--chart-3);
+  stroke-opacity: 0.45;
+}
+.pd-label {
+  font-size: 13px;
+  fill: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.pd-label.strong {
+  fill: var(--fg);
+  font-weight: 600;
+}
+.pd-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+  padding: 4px 4px 0;
+  color: var(--muted);
+}
+.pd-summary strong {
+  color: var(--fg);
+}
+.pd-key::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 4px;
+}
+.pd-key.ice::before {
+  background: var(--chart-1);
+}
+.pd-key.electric::before {
+  background: var(--chart-2);
+}
+.pd-key.battery::before {
+  background: var(--chart-3);
+}
+.add-motor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.add-motor .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.add-motor .option-icon svg {
+  width: 30px;
+  height: 20px;
 }

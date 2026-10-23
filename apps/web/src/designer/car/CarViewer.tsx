@@ -324,13 +324,13 @@ function Internals({
       {dims && (
         <>
           {box(
-            'engine',
+            'powertrain',
             [ex, 0, ez],
             transverse
               ? [dims.width, dims.length, dims.height]
               : [dims.length, dims.width, dims.height],
             '#d97706',
-            'engine',
+            'powertrain',
           )}
           {box(
             'gearbox',
@@ -356,7 +356,7 @@ function Internals({
       {analysis.mass.items
         .filter((i) => i.group === 'motors')
         .map((i, n) =>
-          box(`motor-${n}`, [i.x, 0, i.z + explode], [0.35, 0.5, 0.3], '#7c3aed', 'engine'),
+          box(`motor-${n}`, [i.x, 0, i.z + explode], [0.35, 0.5, 0.3], '#7c3aed', 'powertrain'),
         )}
       {analysis.mass.items
         .filter((i) => i.group === 'battery')
@@ -371,7 +371,7 @@ function Internals({
             [i.x, 0, i.z + explode * 0.5],
             [length, width, Math.max(0.08, volume / (length * width))],
             '#0891b2',
-            'engine',
+            'powertrain',
           );
         })}
       {Array.from({ length: seats }, (_, i) => {
