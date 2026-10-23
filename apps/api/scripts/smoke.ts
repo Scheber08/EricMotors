@@ -182,13 +182,15 @@ r = await call('PUT', `/api/designs/${engine.id}`, {
 expect('Motor speichern (privat)', r.status === 201, r.json);
 r = await call('GET', '/api/designs');
 expect('eigene Entwürfe: 2', r.json.items?.length === 2, r.json);
-r = await call('GET', '/api/gallery?kind=car');
+// Laufspezifischer Filter, damit der 60-s-Galerie-Cache eines früheren Laufs nicht greift.
+const probe = 1000 + Math.floor(Math.random() * 1e5);
+r = await call('GET', `/api/gallery?kind=car&minPowerW=${probe}`);
 expect(
   'Galerie enthält das öffentliche Auto',
   r.json.items?.some((d: Json) => d.id === car.id),
   r.json,
 );
-r = await call('GET', '/api/gallery?kind=engine');
+r = await call('GET', `/api/gallery?kind=engine&minPowerW=${probe}`);
 expect(
   'Galerie enthält den privaten Motor nicht',
   !r.json.items?.some((d: Json) => d.id === engine.id),

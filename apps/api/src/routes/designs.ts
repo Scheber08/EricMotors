@@ -99,9 +99,11 @@ async function cached(
   c: Context<AppEnv>,
   ttl: number,
   produce: () => Promise<{ response: Response; cacheable: boolean } | null>,
+  /** Kanonische Cache-URL; verhindert, dass beliebige Zusatzparameter den Cache umgehen. */
+  cacheUrl: string = c.req.url,
 ): Promise<Response> {
   const cache = (caches as unknown as { default: Cache }).default;
-  const key = new Request(c.req.url, { method: 'GET' });
+  const key = new Request(cacheUrl, { method: 'GET' });
   const hit = await cache.match(key);
   if (hit) return hit;
   const result = await produce();
@@ -344,44 +346,57 @@ designs.get('/api/designs/:id/thumb', async (c) => {
 designs.get('/api/gallery', async (c) => {
   const q = GalleryQuery.safeParse(c.req.query());
   if (!q.success) return fail(c, 400, 'invalid_input');
-  return cached(c, 60, async () => {
-    const { kind, sort, category, layout, minPowerW, maxMassKg, cursor } = q.data;
-    const where = ['d.kind = ?', "d.visibility = 'public'", 'd.hidden = 0'];
-    const binds: (string | number)[] = [kind];
-    const add = (clause: string, ...values: (string | number)[]) => {
-      where.push(clause);
-      binds.push(...values);
-    };
-    if (category) add('d.category = ?', category);
-    if (layout) add('d.layout = ?', layout);
-    if (minPowerW !== undefined) add('d.power_w >= ?', minPowerW);
-    if (maxMassKg !== undefined) add('d.mass_kg <= ?', maxMassKg);
-    // Keyset-Pagination: liest nur so viele Zeilen wie nötig (kein OFFSET).
-    if (cursor) {
-      const [a, b] = cursor.split('_');
-      if (sort === 'recent') add('d.published_at < ?', Number(a));
-      else
-        add('(d.like_count < ? OR (d.like_count = ? AND d.id > ?))', Number(a), Number(a), b ?? '');
-    }
-    const order = sort === 'recent' ? 'd.published_at DESC' : 'd.like_count DESC, d.id ASC';
-    const rows = await c.env.DB.prepare(
-      `${SELECT} WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT ${PAGE_SIZE + 1}`,
-    )
-      .bind(...binds)
-      .all<DesignRow>();
-    const items = rows.results.slice(0, PAGE_SIZE);
-    const last = items.at(-1);
-    const nextCursor =
-      rows.results.length > PAGE_SIZE && last
-        ? sort === 'recent'
-          ? String(last.published_at)
-          : `${last.like_count}_${last.id}`
-        : null;
-    return {
-      response: c.json({ items: items.map(toMeta), nextCursor } satisfies GalleryPage),
-      cacheable: true,
-    };
-  });
+  const canonical = new URL('/api/gallery', c.req.url);
+  for (const [k, v] of Object.entries(q.data).sort())
+    if (v !== undefined) canonical.searchParams.set(k, String(v));
+  return cached(
+    c,
+    60,
+    async () => {
+      const { kind, sort, category, layout, minPowerW, maxMassKg, cursor } = q.data;
+      const where = ['d.kind = ?', "d.visibility = 'public'", 'd.hidden = 0'];
+      const binds: (string | number)[] = [kind];
+      const add = (clause: string, ...values: (string | number)[]) => {
+        where.push(clause);
+        binds.push(...values);
+      };
+      if (category) add('d.category = ?', category);
+      if (layout) add('d.layout = ?', layout);
+      if (minPowerW !== undefined) add('d.power_w >= ?', minPowerW);
+      if (maxMassKg !== undefined) add('d.mass_kg <= ?', maxMassKg);
+      // Keyset-Pagination: liest nur so viele Zeilen wie nötig (kein OFFSET).
+      if (cursor) {
+        const [a, b] = cursor.split('_');
+        if (sort === 'recent') add('d.published_at < ?', Number(a));
+        else
+          add(
+            '(d.like_count < ? OR (d.like_count = ? AND d.id > ?))',
+            Number(a),
+            Number(a),
+            b ?? '',
+          );
+      }
+      const order = sort === 'recent' ? 'd.published_at DESC' : 'd.like_count DESC, d.id ASC';
+      const rows = await c.env.DB.prepare(
+        `${SELECT} WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT ${PAGE_SIZE + 1}`,
+      )
+        .bind(...binds)
+        .all<DesignRow>();
+      const items = rows.results.slice(0, PAGE_SIZE);
+      const last = items.at(-1);
+      const nextCursor =
+        rows.results.length > PAGE_SIZE && last
+          ? sort === 'recent'
+            ? String(last.published_at)
+            : `${last.like_count}_${last.id}`
+          : null;
+      return {
+        response: c.json({ items: items.map(toMeta), nextCursor } satisfies GalleryPage),
+        cacheable: true,
+      };
+    },
+    canonical.toString(),
+  );
 });
 
 designs.get('/api/users/:username/designs', async (c) => {
