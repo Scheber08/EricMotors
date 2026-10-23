@@ -65,7 +65,8 @@ export function bodyLayout(car: Car): BodyLayout {
   const roofZ = H;
   const open = shape === 'roadster';
 
-  const mid = car.engine.placement.startsWith('mid') || car.engine.placement.startsWith('rear');
+  const placement = car.powertrain.engine?.placement ?? 'front-transverse';
+  const mid = placement.startsWith('mid') || placement.startsWith('rear');
   const cowlX = mid
     ? -wb * 0.02
     : shape === 'van'

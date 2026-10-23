@@ -64,7 +64,7 @@ function zoneLayer(
 }
 
 function useBodyGeometry(car: Car) {
-  const { model, wheels, suspension, engine } = car;
+  const { model, wheels, suspension, powertrain } = car;
   return useMemo(() => {
     const mesh = buildBody(car);
     const order: BodyGroup[] = ['paint', 'hood', 'lower', 'roof', 'glass', 'dark'];
@@ -91,7 +91,7 @@ function useBodyGeometry(car: Car) {
     return { geometry, groups };
     // Nur Form-relevante Teile des Autos lösen Neuaufbau aus.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, wheels, suspension.rideHeight, engine.placement]);
+  }, [model, wheels, suspension.rideHeight, powertrain.engine?.placement]);
 }
 
 function Body({
@@ -285,9 +285,9 @@ function Internals({
   mode: ViewMode;
   onSelect: (s: string) => void;
 }) {
-  const dims = analysis.engine.dimensions;
+  const dims = analysis.engine?.dimensions;
   const engineItem = analysis.mass.items.find((i) => i.group === 'engine');
-  const transverse = car.engine.placement.endsWith('transverse');
+  const transverse = car.powertrain.engine?.placement.endsWith('transverse') ?? false;
   const explode = mode === 'exploded' ? 0.25 : 0;
   const ex = engineItem?.x ?? 0;
   const ez = (engineItem?.z ?? 0.5) + explode;
@@ -321,33 +321,59 @@ function Internals({
   const seatRows = Math.ceil(seats / (seats > 5 ? 3 : 2));
   return (
     <group>
-      {box(
-        'engine',
-        [ex, 0, ez],
-        transverse
-          ? [dims.width, dims.length, dims.height]
-          : [dims.length, dims.width, dims.height],
-        '#d97706',
-        'engine',
+      {dims && (
+        <>
+          {box(
+            'powertrain',
+            [ex, 0, ez],
+            transverse
+              ? [dims.width, dims.length, dims.height]
+              : [dims.length, dims.width, dims.height],
+            '#d97706',
+            'powertrain',
+          )}
+          {box(
+            'gearbox',
+            [
+              ex - (transverse ? 0 : dims.length / 2 + 0.25),
+              transverse ? dims.length / 2 + 0.15 : 0,
+              ez - 0.1,
+            ],
+            [0.45, 0.32, 0.3],
+            '#2563eb',
+            'drivetrain',
+          )}
+        </>
       )}
-      {box(
-        'gearbox',
-        [
-          ex - (transverse ? 0 : dims.length / 2 + 0.25),
-          transverse ? dims.length / 2 + 0.15 : 0,
-          ez - 0.1,
-        ],
-        [0.45, 0.32, 0.3],
-        '#2563eb',
-        'drivetrain',
-      )}
-      {box(
-        'tank',
-        [-wb + 0.45, 0, car.suspension.rideHeight + 0.18 + explode * 0.5],
-        [0.45, 0.8, 0.22],
-        '#16a34a',
-        'trim',
-      )}
+      {car.powertrain.engine &&
+        box(
+          'tank',
+          [-wb + 0.45, 0, car.suspension.rideHeight + 0.18 + explode * 0.5],
+          [0.45, 0.8, 0.22],
+          '#16a34a',
+          'trim',
+        )}
+      {analysis.mass.items
+        .filter((i) => i.group === 'motors')
+        .map((i, n) =>
+          box(`motor-${n}`, [i.x, 0, i.z + explode], [0.35, 0.5, 0.3], '#7c3aed', 'powertrain'),
+        )}
+      {analysis.mass.items
+        .filter((i) => i.group === 'battery')
+        .map((i, n) => {
+          // Volumen aus Masse (≈ 2,2 kg/l Packdichte), flach im Boden bzw. kompakt beim Hybrid.
+          const volume = i.mass / 2200;
+          const floor = car.powertrain.type === 'electric';
+          const length = floor ? wb * 0.75 : 0.5;
+          const width = floor ? 1.3 : 0.9;
+          return box(
+            `battery-${n}`,
+            [i.x, 0, i.z + explode * 0.5],
+            [length, width, Math.max(0.08, volume / (length * width))],
+            '#0891b2',
+            'powertrain',
+          );
+        })}
       {Array.from({ length: seats }, (_, i) => {
         const row = Math.floor(i / (seats > 5 ? 3 : 2));
         const perRow = seats > 5 ? 3 : 2;

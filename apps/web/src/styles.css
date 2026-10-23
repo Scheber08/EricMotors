@@ -17,6 +17,9 @@
   --chart-1: #ea580c;
   --chart-2: #2563eb;
   --chart-3: #16a34a;
+  --chart-4: #9333ea;
+  --chart-5: #0891b2;
+  --chart-6: #ca8a04;
   --chart-grid: #e2e5ea;
   --radius: 10px;
   --shadow: 0 1px 2px rgb(15 23 42 / 6%), 0 4px 16px rgb(15 23 42 / 6%);
@@ -43,6 +46,12 @@
     --chart-1: #fb923c;
     --chart-2: #60a5fa;
     --chart-3: #4ade80;
+    --chart-4: #c084fc;
+    --chart-5: #22d3ee;
+    --chart-6: #facc15;
+    --chart-4: #c084fc;
+    --chart-5: #22d3ee;
+    --chart-6: #facc15;
     --chart-grid: #26324d;
     --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 30%);
     color-scheme: dark;
@@ -66,6 +75,9 @@
   --chart-1: #fb923c;
   --chart-2: #60a5fa;
   --chart-3: #4ade80;
+  --chart-4: #c084fc;
+  --chart-5: #22d3ee;
+  --chart-6: #facc15;
   --chart-grid: #26324d;
   --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 30%);
   color-scheme: dark;
@@ -580,7 +592,7 @@ textarea {
 }
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
   gap: 8px;
 }
 .stat {
@@ -590,7 +602,7 @@ textarea {
   padding: 10px 12px;
 }
 .stat-value {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -885,6 +897,7 @@ textarea {
   border-color: var(--accent);
 }
 .design-thumb {
+  position: relative;
   aspect-ratio: 16 / 9;
   background: var(--surface-2);
   display: grid;
@@ -967,4 +980,404 @@ textarea {
 .cloud-item {
   display: grid;
   gap: 6px;
+}
+
+/* ---------- Auswahlkarten ---------- */
+
+.option-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+}
+.option-cards.compact {
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+}
+.option-card {
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  padding: 6px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: center;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+.option-card:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+.option-card[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.option-card[aria-checked='true'] .option-icon {
+  color: var(--accent);
+}
+.option-icon svg {
+  display: block;
+}
+.option-badge {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Antriebs-Schema ---------- */
+
+.powertrain-diagram {
+  margin: 0 0 8px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+.powertrain-diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.pd-body {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+.pd-dir {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.pd-wheel {
+  fill: var(--muted);
+  opacity: 0.45;
+}
+.pd-wheel.driven {
+  fill: var(--fg);
+  opacity: 0.9;
+}
+.pd-shaft {
+  stroke: var(--border);
+  stroke-width: 2;
+  fill: none;
+}
+.pd-shaft.driven {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+.pd-part {
+  cursor: pointer;
+  outline: none;
+}
+.pd-part:hover > :first-child,
+.pd-part:focus-visible > :first-child {
+  stroke-width: 3;
+}
+.pd-engine rect {
+  fill: color-mix(in srgb, var(--chart-1) 25%, var(--surface));
+  stroke: var(--chart-1);
+  stroke-width: 1.5;
+}
+.pd-engine circle {
+  fill: var(--chart-1);
+}
+.pd-gearbox {
+  fill: var(--surface-2);
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.pd-tank {
+  fill: none;
+  stroke: var(--chart-1);
+  stroke-dasharray: 3 2;
+  stroke-width: 1.5;
+}
+.pd-motor circle {
+  fill: color-mix(in srgb, var(--chart-2) 25%, var(--surface));
+  stroke: var(--chart-2);
+  stroke-width: 1.5;
+}
+.pd-bolt {
+  fill: none;
+  stroke: var(--chart-2);
+  stroke-width: 1.5;
+}
+.pd-battery rect {
+  fill: color-mix(in srgb, var(--chart-3) 22%, var(--surface));
+  stroke: var(--chart-3);
+  stroke-width: 1.5;
+}
+.pd-cell {
+  stroke: var(--chart-3);
+  stroke-opacity: 0.45;
+}
+.pd-label {
+  font-size: 13px;
+  fill: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.pd-label.strong {
+  fill: var(--fg);
+  font-weight: 600;
+}
+.pd-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+  padding: 4px 4px 0;
+  color: var(--muted);
+}
+.pd-summary strong {
+  color: var(--fg);
+}
+.pd-key::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 4px;
+}
+.pd-key.ice::before {
+  background: var(--chart-1);
+}
+.pd-key.electric::before {
+  background: var(--chart-2);
+}
+.pd-key.battery::before {
+  background: var(--chart-3);
+}
+.add-motor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.add-motor .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.add-motor .option-icon svg {
+  width: 30px;
+  height: 20px;
+}
+
+/* ---------- Tachos, Netzdiagramm, Ringdiagramm ---------- */
+
+.gauges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+.gauge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 10px 8px;
+  text-align: center;
+}
+.gauge svg {
+  display: block;
+  width: 100%;
+  max-width: 150px;
+  margin: 0 auto -18px;
+}
+.gauge-track,
+.gauge-fill {
+  fill: none;
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+.gauge-track {
+  stroke: var(--surface-2);
+}
+.gauge-fill {
+  stroke: var(--accent);
+  transition: d 0.3s ease;
+}
+.gauge-fill.ice {
+  stroke: var(--chart-1);
+}
+.gauge-fill.electric {
+  stroke: var(--chart-2);
+}
+.gauge-fill.battery {
+  stroke: var(--chart-3);
+}
+.gauge-needle {
+  stroke: var(--fg);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.gauge-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gauge-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.gauge-hint {
+  font-size: 11px;
+  color: var(--muted);
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  min-width: 0;
+}
+.panel h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.radar svg {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  overflow: visible;
+}
+.radar-grid {
+  fill: none;
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+.radar-area {
+  fill: color-mix(in srgb, var(--accent) 22%, transparent);
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transition: all 0.3s ease;
+}
+.radar-dot {
+  fill: var(--accent);
+}
+.radar-label {
+  font-size: 14px;
+  fill: var(--muted);
+}
+.radar-label.best {
+  fill: var(--fg);
+  font-weight: 600;
+}
+.radar-value {
+  fill: var(--fg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.donut {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+.donut svg {
+  display: block;
+  width: 100%;
+}
+.donut-track {
+  fill: none;
+  stroke: var(--surface-2);
+  stroke-width: 16;
+}
+.donut-seg {
+  fill: none;
+  stroke-width: 16;
+}
+.donut-center {
+  font-size: 14px;
+  font-weight: 700;
+  fill: var(--fg);
+}
+.donut-center-label {
+  font-size: 9px;
+  fill: var(--muted);
+}
+.donut-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.donut-legend li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto 42px;
+  gap: 8px;
+  align-items: center;
+}
+.donut-legend .swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.donut-legend .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 520px) {
+  .donut {
+    grid-template-columns: 1fr;
+  }
+  .donut svg {
+    max-width: 180px;
+    margin: 0 auto;
+  }
+}
+
+/* ---------- Antriebs-Kennzeichnung (Galerie) ---------- */
+
+.powertrain-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--shadow);
+}
+.powertrain-badge svg {
+  width: 24px;
+  height: 16px;
+}
+.powertrain-badge.ice svg {
+  color: var(--chart-1);
+}
+.powertrain-badge.electric svg {
+  color: var(--chart-2);
+}
+.powertrain-badge.hybrid svg {
+  color: var(--chart-3);
+}
+.icon-segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.icon-segmented svg {
+  width: 24px;
+  height: 16px;
 }

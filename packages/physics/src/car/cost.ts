@@ -1,15 +1,19 @@
 import type { Car } from '@ericmotors/schema';
-import { FUELS } from '../constants';
+import { ELECTRICITY_PRICE, FUELS } from '../constants';
+import { batteryCost } from '../electric/battery';
+import { motorCost } from '../electric/motor';
+import type { Consumption } from './consumption';
 import type { CarGeometry } from './geometry';
 
 /**
- * Herstellkosten des Autos in € (ohne Motor, der kommt aus der Motoranalyse). Spielnahe
+ * Herstellkosten des Autos in € (Verbrenner aus der Motoranalyse, E-Motoren und Batterie hier). Spielnahe
  * Richtwerte; jeder Abschnitt wird mit (1 + 0,07 · Qualität) skaliert.
  */
 const q = (quality: number) => 1 + 0.07 * quality;
 
 export interface CarCostBreakdown {
   engine: number;
+  electric: number;
   body: number;
   drivetrain: number;
   chassis: number;
@@ -48,7 +52,15 @@ export function carCost(car: Car, g: CarGeometry, engineCost: number): CarCostBr
   const diff = { open: 100, viscous: 300, 'plate-lsd': 500, torsen: 700, active: 1500 }[
     dt.differential
   ];
-  const drivetrain = (gearbox + diff + (dt.layout === 'awd' ? 1200 : 0)) * q(dt.quality);
+  const pt = car.powertrain;
+  // Elektroauto: kein Schaltgetriebe (Untersetzung ist im Motorpreis), Differenzial bleibt.
+  const drivetrain = pt.engine
+    ? (gearbox + diff + (dt.layout === 'awd' ? 1200 : 0)) * q(dt.quality)
+    : diff * q(dt.quality);
+  const electric =
+    pt.motors.reduce((a, m) => a + motorCost(m), 0) +
+    (pt.battery ? batteryCost(pt.battery) : 0) +
+    (pt.type === 'ice' ? 0 : 800);
 
   const front = { 'solid-axle': 250, macpherson: 300, 'double-wishbone': 550, pushrod: 900 }[
     model.frontSuspension
@@ -113,6 +125,7 @@ export function carCost(car: Car, g: CarGeometry, engineCost: number): CarCostBr
 
   const parts = {
     engine: engineCost,
+    electric,
     body,
     drivetrain,
     chassis,
@@ -133,11 +146,18 @@ export function annualRunningCost(
   car: Car,
   productionCost: number,
   reliability: number,
-  fuelPerDistance: number,
+  consumption: Consumption,
 ): number {
   const distance = 15_000e3;
-  const fuel = fuelPerDistance * distance * 1000 * FUELS[car.engine.variant.fuel].pricePerLiter;
-  const service = 0.025 * productionCost * (1.6 - reliability / 100);
+  const engine = car.powertrain.engine;
+  const fuel = engine
+    ? consumption.fuelPerDistance * distance * 1000 * FUELS[engine.variant.fuel].pricePerLiter
+    : 0;
+  const electricity = ((consumption.electricPerDistance * distance) / 3.6e6) * ELECTRICITY_PRICE;
+  // Elektroautos haben weniger Verschleißteile (kein Ölwechsel, Bremsen schonender).
+  const serviceFactor =
+    car.powertrain.type === 'electric' ? 0.6 : car.powertrain.type === 'hybrid' ? 1.1 : 1;
+  const service = 0.025 * productionCost * (1.6 - reliability / 100) * serviceFactor;
   const tireWear = {
     eco: 120,
     touring: 150,
@@ -147,5 +167,5 @@ export function annualRunningCost(
     'all-terrain': 200,
     offroad: 250,
   }[car.wheels.tireType];
-  return fuel + service + tireWear;
+  return fuel + electricity + service + tireWear;
 }
