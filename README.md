@@ -7,7 +7,56 @@ Eine physikalische Simulation folgt in einer späteren Phase.
 
 Live: <https://car.scheber.com>
 
-> Status: Projekt im Aufbau. Architektur siehe [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> Status: Phase 0 (Grundgerüst). Architektur und Phasenplan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> Physikalische Modelle und Quellen: [`docs/MODELS.md`](docs/MODELS.md).
+
+## Aufbau
+
+| Pfad               | Inhalt                                                                       |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `apps/web`         | React-SPA (Vite): Konfigurator, 3D-Ansicht, Galerie                          |
+| `apps/api`         | Cloudflare Worker (Hono): Auth, Speichern/Laden, Galerie, Likes              |
+| `packages/schema`  | Versioniertes Fahrzeugschema (Zod), Einheiten – gemeinsam für Web und Worker |
+| `packages/physics` | Reine, getestete Berechnungsfunktionen (ab Phase 1)                          |
+| `migrations`       | D1-Migrationen                                                               |
+
+Alle physikalischen Berechnungen und das 3D-Rendering laufen im Browser. Der Worker speichert
+und liefert nur Daten aus, damit alles im kostenlosen Cloudflare-Plan bleibt.
+
+## Lokale Entwicklung
+
+Voraussetzung: Node.js 22 (siehe `.nvmrc`).
+
+```sh
+npm install
+cp .dev.vars.example .dev.vars   # lokale Secrets, wird nicht committet
+npm run db:migrate:local         # lokale D1-Datenbank anlegen
+npm run dev                      # Vite (http://localhost:5173) + Worker (Port 8787)
+```
+
+Vite leitet `/api` und `/v` an den lokalen Worker weiter. D1 und R2 werden von Wrangler lokal
+simuliert, ein Cloudflare-Konto ist für die Entwicklung nicht nötig.
+
+Weitere Befehle:
+
+| Befehl                               | Zweck                                                |
+| ------------------------------------ | ---------------------------------------------------- |
+| `npm test`                           | Unit-Tests (Vitest)                                  |
+| `npm run lint` / `npm run typecheck` | ESLint / TypeScript                                  |
+| `npm run format`                     | Prettier                                             |
+| `npm run build`                      | Produktions-Build des Frontends nach `apps/web/dist` |
+
+## Deployment
+
+`main` ist Produktion. Entwickelt wird in Feature-Branches mit Pull Requests
+(Conventional Commits). Cloudflare Workers Builds deployt jeden Push auf `main` nach
+<https://car.scheber.com> und erzeugt für jeden anderen Branch eine Preview-URL mit eigener
+Datenbank. GitHub Actions prüft jeden Pull Request (Lint, Typecheck, Tests, Build).
+
+Einmalige Einrichtung und Details: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+**Keine Secrets committen.** Secrets nur über `wrangler secret put` bzw. das Dashboard,
+lokal über `.dev.vars`.
 
 ## Lizenz
 
