@@ -13,5 +13,8 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    // three.js + React Three Fiber (~270 KB gzip) liegen bewusst in einem eigenen, erst im
+    // Auto-Designer nachgeladenen Chunk.
+    chunkSizeWarningLimit: 1100,
   },
 });

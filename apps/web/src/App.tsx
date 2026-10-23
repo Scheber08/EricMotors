@@ -1,41 +1,40 @@
-import { useEffect, useState } from 'react';
-import { BRAND } from './brand';
+import { lazy, Suspense } from 'react';
+import { Route, Switch, useLocation } from 'wouter';
+import { ErrorBoundary } from './app/ErrorBoundary';
+import { Topbar } from './app/Topbar';
+import { useDocumentSettings } from './app/useTheme';
+import { useT } from './i18n';
+import { GaragePage } from './pages/GaragePage';
+import { HomePage } from './pages/HomePage';
 
-type Health =
-  | { state: 'loading' }
-  | { state: 'ok'; environment: string; database: string }
-  | { state: 'offline' };
+// Designer mit 3D-Ansicht werden erst bei Bedarf geladen (kleineres Start-Bundle).
+const CarDesigner = lazy(() =>
+  import('./designer/CarDesigner').then((m) => ({ default: m.CarDesigner })),
+);
+const EngineDesigner = lazy(() =>
+  import('./designer/EngineDesigner').then((m) => ({ default: m.EngineDesigner })),
+);
 
 export function App() {
-  const [health, setHealth] = useState<Health>({ state: 'loading' });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/health', { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((data: { environment: string; database: string }) =>
-        setHealth({ state: 'ok', environment: data.environment, database: data.database }),
-      )
-      .catch(() => {
-        if (!controller.signal.aborted) setHealth({ state: 'offline' });
-      });
-    return () => controller.abort();
-  }, []);
-
+  useDocumentSettings();
+  const t = useT();
+  const [location] = useLocation();
   return (
-    <main className="hero">
-      <h1>
-        {BRAND.prefix}
-        <span>{BRAND.suffix}</span>
-      </h1>
-      <p>Konstruiere dein eigenes Auto – ingenieursnah, bis ins kleinste Detail.</p>
-      <p className="status" aria-live="polite">
-        {health.state === 'loading' && 'Verbinde mit der Cloud …'}
-        {health.state === 'ok' &&
-          `Cloud verbunden · Umgebung: ${health.environment} · Datenbank: ${health.database}`}
-        {health.state === 'offline' &&
-          'Cloud-Funktionen gerade nicht erreichbar. Der Konfigurator funktioniert trotzdem lokal.'}
-      </p>
-    </main>
+    <div className="app">
+      <Topbar />
+      <ErrorBoundary resetKey={location}>
+        <Suspense fallback={<main className="page muted">{t('common.loading')}</main>}>
+          <Switch>
+            <Route path="/" component={HomePage} />
+            <Route path="/garage" component={GaragePage} />
+            <Route path="/car/:id">{(p) => <CarDesigner id={p.id} />}</Route>
+            <Route path="/engine/:id">{(p) => <EngineDesigner id={p.id} />}</Route>
+            <Route>
+              <main className="page">{t('common.notFound')}</main>
+            </Route>
+          </Switch>
+        </Suspense>
+      </ErrorBoundary>
+    </div>
   );
 }

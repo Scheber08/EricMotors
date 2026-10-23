@@ -1,7 +1,10 @@
 /**
- * Gemeinsames Fahrzeugschema für Frontend und Worker.
- * Phase 0: nur Version und Einheiten. Das vollständige `Vehicle`-Schema folgt in Phase 1.
+ * Gemeinsames, versioniertes Schema für Autos und Motoren (Frontend und Worker).
+ * Alle physikalischen Größen in SI-Einheiten.
  */
-export const SCHEMA_VERSION = 1;
-
+export * from './primitives';
 export * from './units';
+export * from './engine';
+export * from './car';
+export * from './migrate';
+export * from './templates';
