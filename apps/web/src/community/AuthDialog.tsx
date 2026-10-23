@@ -23,10 +23,10 @@ export function AuthDialog({
   const [busy, setBusy] = useState(false);
   const { login, register } = useAuth.getState();
 
+  // Kein close() im Aufräumen: Das löst `close` aus und würde den Dialog in StrictMode sofort schließen.
   useEffect(() => {
     const dialog = ref.current;
-    dialog?.showModal();
-    return () => dialog?.close();
+    if (dialog && !dialog.open) dialog.showModal();
   }, []);
 
   const submit = async (e: React.FormEvent) => {

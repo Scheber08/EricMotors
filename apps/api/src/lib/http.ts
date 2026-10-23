@@ -32,7 +32,9 @@ export const sameOrigin: MiddlewareHandler<AppEnv> = async (c, next) => {
     return next();
   const origin = c.req.header('origin');
   const self = new URL(c.req.url).origin;
-  const forwarded = c.req.header('x-forwarded-host');
+  // Nur lokal: Der Vite-Dev-Proxy leitet von Port 5173 weiter und setzt X-Forwarded-Host.
+  const forwarded =
+    c.env.ENVIRONMENT === 'development' ? c.req.header('x-forwarded-host') : undefined;
   const allowed =
     origin === self ||
     (forwarded !== undefined && origin !== undefined && new URL(origin).host === forwarded);
