@@ -1,0 +1,25 @@
+{
+  "name": "ericmotors",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n web,api -c cyan,magenta \"npm run dev -w @ericmotors/web\" \"npm run dev -w @ericmotors/api\"",
+    "build": "npm run build -w @ericmotors/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "deploy:preview": "wrangler d1 migrations apply PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc && wrangler preview"
+  }
+}

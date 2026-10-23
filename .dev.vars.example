@@ -1,0 +1,12 @@
+# Kopiere diese Datei nach `.dev.vars` (wird nicht committet) und trage lokale Werte ein.
+# Produktionswerte NIE hier eintragen, sondern per `npx wrangler secret put <NAME>`
+# bzw. im Cloudflare-Dashboard setzen.
+
+# Signaturschlüssel für Session-Cookies (lokal beliebig, z. B. `openssl rand -hex 32`)
+SESSION_SECRET=
+
+# OAuth (ab Phase 2)
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
