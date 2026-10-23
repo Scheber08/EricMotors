@@ -968,3 +968,55 @@ textarea {
   display: grid;
   gap: 6px;
 }
+
+/* ---------- Auswahlkarten ---------- */
+
+.option-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+}
+.option-cards.compact {
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+}
+.option-card {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  padding: 6px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: center;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+.option-card:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+.option-card[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.option-card[aria-checked='true'] .option-icon {
+  color: var(--accent);
+}
+.option-icon svg {
+  display: block;
+}
+.option-badge {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

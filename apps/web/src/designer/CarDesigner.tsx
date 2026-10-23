@@ -30,7 +30,7 @@ import {
   FieldGroup,
   NumberField,
   QualityField,
-  SelectField,
+  CardField,
   SliderField,
   ToggleField,
 } from './fields';
@@ -189,7 +189,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
       return (
         <>
           <FieldGroup title={t('sections.car.model')}>
-            <SelectField ctx={ctx} path="model.shape" options={BodyShape.options} />
+            <CardField ctx={ctx} path="model.shape" options={BodyShape.options} />
             <NumberField
               ctx={ctx}
               path="model.dimensions.length"
@@ -242,24 +242,24 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
             ))}
           </FieldGroup>
           <FieldGroup title={t('designer.chassis')}>
-            <SelectField
+            <CardField
               ctx={ctx}
               path="model.chassis"
               options={['monocoque', 'ladder', 'spaceframe']}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="model.chassisMaterial"
               options={['steel', 'galvanised-steel', 'aluminium', 'cfrp']}
               optionKey="bodyMaterial"
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="model.frontSuspension"
               options={['solid-axle', 'macpherson', 'double-wishbone', 'pushrod']}
               optionKey="suspensionType"
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="model.rearSuspension"
               options={[
@@ -283,33 +283,33 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
     case 'trim':
       return (
         <FieldGroup title={t('sections.car.trim')}>
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.bodyMaterial"
             options={['steel', 'galvanised-steel', 'aluminium', 'fibreglass', 'cfrp']}
             optionKey="bodyMaterial"
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.interior"
             options={['basic', 'standard', 'premium', 'luxury', 'sport', 'race']}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.seats"
             options={car.model.shape === 'roadster' ? [1, 2] : [1, 2, 3, 4, 5, 6, 7, 8, 9]}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.entertainment"
             options={['none', 'radio', 'infotainment', 'premium-infotainment']}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.safety"
             options={['basic', 'standard', 'advanced', 'modern']}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.powerSteering"
             options={['none', 'hydraulic', 'electric']}
@@ -324,9 +324,9 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
     case 'drivetrain':
       return (
         <FieldGroup title={t('sections.car.drivetrain')}>
-          <SelectField ctx={ctx} path="drivetrain.layout" options={['fwd', 'rwd', 'awd']} />
+          <CardField ctx={ctx} path="drivetrain.layout" options={['fwd', 'rwd', 'awd']} />
           {dt.layout === 'awd' && <SliderField ctx={ctx} path="drivetrain.awdFrontShare" />}
-          <SelectField
+          <CardField
             ctx={ctx}
             path="drivetrain.gearbox"
             options={['manual', 'automatic', 'dct', 'sequential', 'cvt']}
@@ -370,7 +370,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
             max={7}
             step={0.01}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="drivetrain.differential"
             options={['open', 'viscous', 'plate-lsd', 'torsen', 'active']}
@@ -382,17 +382,17 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
       return (
         <>
           <FieldGroup title={t('sections.car.suspension')}>
-            <SelectField
+            <CardField
               ctx={ctx}
               path="suspension.springs"
               options={['passive', 'progressive', 'hydropneumatic', 'air']}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="suspension.dampers"
               options={['twin-tube', 'mono-tube', 'adaptive']}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="suspension.antiRoll"
               options={['none', 'passive', 'active']}
@@ -428,7 +428,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
       return (
         <>
           <FieldGroup title={t('sections.car.wheels')}>
-            <SelectField
+            <CardField
               ctx={ctx}
               path="wheels.tireType"
               options={['eco', 'touring', 'sport', 'semi-slick', 'slick', 'all-terrain', 'offroad']}
@@ -441,12 +441,12 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
               max={inch(22)}
               step={inch(1)}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="wheels.rimMaterial"
               options={['steel', 'alloy', 'forged', 'magnesium', 'cfrp']}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="wheels.rimDesign"
               options={['steel', 'five-spoke', 'multi-spoke', 'mesh', 'aero']}
@@ -472,7 +472,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
       return (
         <>
           <FieldGroup title={t('sections.car.brakes')}>
-            <SelectField
+            <CardField
               ctx={ctx}
               path="brakes.pads"
               options={['organic', 'semi-metallic', 'ceramic', 'race']}
@@ -482,9 +482,10 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
           </FieldGroup>
           {(['front', 'rear'] as const).map((axle) => (
             <FieldGroup key={axle} title={t(`designer.${axle}`)}>
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={`brakes.${axle}.type`}
+                iconSet="brakeType"
                 options={['drum', 'solid-disc', 'vented-disc', 'carbon-ceramic']}
               />
               <NumberField
@@ -495,7 +496,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
                 max={0.42}
                 step={mm(2)}
               />
-              <SelectField ctx={ctx} path={`brakes.${axle}.pistons`} options={[1, 2, 4, 6, 8]} />
+              <CardField ctx={ctx} path={`brakes.${axle}.pistons`} options={[1, 2, 4, 6, 8]} />
             </FieldGroup>
           ))}
         </>
@@ -505,7 +506,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
         <FieldGroup title={t('sections.car.aero')}>
           <SliderField ctx={ctx} path="aero.frontDownforce" />
           <SliderField ctx={ctx} path="aero.rearDownforce" />
-          <SelectField ctx={ctx} path="aero.undertray" options={['none', 'partial', 'full']} />
+          <CardField ctx={ctx} path="aero.undertray" options={['none', 'partial', 'full']} />
           <SliderField ctx={ctx} path="aero.cooling" />
         </FieldGroup>
       );
@@ -521,7 +522,7 @@ function PaintSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
   const layerFields = (prefix: string, finish: string) => (
     <>
       <ColorField ctx={ctx} path={`${prefix}.color`} />
-      <SelectField
+      <CardField
         ctx={ctx}
         path={`${prefix}.finish`}
         options={finishes}
@@ -742,9 +743,9 @@ function EngineSection({
           </select>
         </div>
       )}
-      <SelectField
+      <CardField
         ctx={ctx}
-        path="engine.placement"
+        path="powertrain.engine.placement"
         options={
           [
             'front-longitudinal',
