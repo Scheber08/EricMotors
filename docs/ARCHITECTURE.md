@@ -242,3 +242,4 @@ Jede Phase endet mit lauffähigem, getestetem Stand auf `main`.
 | 2026-10-23 | Lizenz AGPL-3.0-only                                                                                                                                                                        | beschlossen |
 | 2026-10-23 | Produktions-Domain `car.scheber.com` (Custom Domain am Worker)                                                                                                                              | beschlossen |
 | 2026-10-23 | Kurswechsel: Bedienung und Logik an _Automation_ angelehnt, spielnah statt ingenieursnah; Motor-Bibliothek (Familie → Varianten), Qualitätsregler, Kosten, Ratings; zunächst nur Verbrenner | beschlossen |
+| 2026-10-23 | Öffentlicher Name **ScheberMotors** (Website, Titel, Open Graph); **EricMotors** bleibt interner Entwicklungsname (Repo, Worker, Pakete)                                                    | beschlossen |
