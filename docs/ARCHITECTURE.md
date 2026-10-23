@@ -283,8 +283,9 @@ Jede Phase endet mit lauffähigem, getestetem Stand auf `main`.
 
 | Datum | Entscheidung | Status |
 | --- | --- | --- |
-| 2026-10-23 | Ein Worker mit Static Assets statt Pages (Cloudflare empfiehlt Workers für neue Full-Stack-Projekte; Previews, D1, R2 und Rate Limiting stehen dort direkt zur Verfügung) | vorgeschlagen |
-| 2026-10-23 | Zustand + zundo statt Redux Toolkit | vorgeschlagen |
-| 2026-10-23 | uPlot für Diagramme | vorgeschlagen |
-| 2026-10-23 | Preview-Umgebung über Worker Previews (`previews`-Block) statt Wrangler-Environments | vorgeschlagen |
-| 2026-10-23 | Lizenz | offen |
+| 2026-10-23 | Ein Worker mit Static Assets statt Pages (Cloudflare empfiehlt Workers für neue Full-Stack-Projekte; Previews, D1, R2 und Rate Limiting stehen dort direkt zur Verfügung) | beschlossen |
+| 2026-10-23 | Zustand + zundo statt Redux Toolkit | beschlossen |
+| 2026-10-23 | uPlot für Diagramme | beschlossen |
+| 2026-10-23 | Preview-Umgebung über Worker Previews (`previews`-Block) statt Wrangler-Environments | beschlossen |
+| 2026-10-23 | Lizenz AGPL-3.0-only | beschlossen |
+| 2026-10-23 | Produktions-Domain `car.scheber.com` (Custom Domain am Worker) | beschlossen |
