@@ -18,3 +18,15 @@ describe('i18n', () => {
     expect(translate('en', 'does.not.exist')).toBe('does.not.exist');
   });
 });
+
+describe('Zusammenführen der Wörterbücher', () => {
+  it('behält Motor- und Auto-Texte im selben Bereich', () => {
+    for (const lang of ['de', 'en'] as const) {
+      expect(translate(lang, 'designer.addVariant')).not.toBe('designer.addVariant');
+      expect(translate(lang, 'designer.views.xray')).not.toBe('designer.views.xray');
+      expect(translate(lang, 'params.engine.bore')).not.toBe('params.engine.bore');
+      expect(translate(lang, 'params.car.wheelbase')).not.toBe('params.car.wheelbase');
+      expect(translate(lang, 'common.saved')).not.toBe('common.saved');
+    }
+  });
+});

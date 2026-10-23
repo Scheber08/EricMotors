@@ -31,6 +31,7 @@ export type Quantity =
   | 'acceleration'
   | 'time'
   | 'distance'
+  | 'longDistance'
   | 'consumption'
   | 'co2'
   | 'angle'
@@ -96,6 +97,8 @@ export function unitFor(q: Quantity, ctx: UnitContext): UnitDef {
       return lin('s', 1, 1);
     case 'distance':
       return metric ? lin('m', 1, 1) : lin('ft', M_PER_FT, 0);
+    case 'longDistance':
+      return metric ? lin('km', 1000, 0) : lin('mi', M_PER_MI, 0);
     case 'consumption':
       // SI: m³/m. Metrisch l/100 km, imperial mpg (US) – reziprok.
       return metric

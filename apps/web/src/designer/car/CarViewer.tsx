@@ -55,9 +55,12 @@ function paintProps(layer: PaintLayer): THREE.MeshPhysicalMaterialParameters {
   }
 }
 
-function zoneLayer(car: Car, zone: 'roof' | 'hood' | 'lower' | 'mirrors' | 'trim'): PaintLayer {
-  if (car.paint.wrap) return car.paint.wrap;
-  return car.paint.zones.find((z) => z.zone === zone)?.layer ?? car.paint.base;
+function zoneLayer(
+  paint: Car['paint'],
+  zone: 'roof' | 'hood' | 'lower' | 'mirrors' | 'trim',
+): PaintLayer {
+  if (paint.wrap) return paint.wrap;
+  return paint.zones.find((z) => z.zone === zone)?.layer ?? paint.base;
 }
 
 function useBodyGeometry(car: Car) {
@@ -103,6 +106,7 @@ function Body({
   const { geometry, groups } = useBodyGeometry(car);
   useEffect(() => () => geometry.dispose(), [geometry]);
   const xray = mode === 'xray';
+  const paint = car.paint;
   const materials = useMemo(() => {
     return groups.map((g) => {
       const transparent = xray
@@ -128,19 +132,19 @@ function Body({
           });
         case 'paint':
           return new THREE.MeshPhysicalMaterial({
-            ...paintProps(car.paint.wrap ?? car.paint.base),
+            ...paintProps(paint.wrap ?? paint.base),
             side: THREE.DoubleSide,
             ...transparent,
           });
         default:
           return new THREE.MeshPhysicalMaterial({
-            ...paintProps(zoneLayer(car, g)),
+            ...paintProps(zoneLayer(paint, g)),
             side: THREE.DoubleSide,
             ...transparent,
           });
       }
     });
-  }, [groups, car.paint, xray]);
+  }, [groups, paint, xray]);
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
 
   const lift = mode === 'exploded' ? 0.45 : 0;
@@ -205,7 +209,7 @@ function Wheel({
         <cylinderGeometry args={[w.radius, w.radius, width, 48, 1, true]} />
         <meshStandardMaterial color="#17181a" roughness={0.85} side={THREE.DoubleSide} />
       </mesh>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
+      <mesh>
         <torusGeometry args={[w.radius - width * 0.18, width * 0.18, 12, 48]} />
         <meshStandardMaterial color="#17181a" roughness={0.85} />
       </mesh>
@@ -229,7 +233,7 @@ function Wheel({
             <meshPhysicalMaterial color={rimColor} metalness={0.85} roughness={0.2} />
           </mesh>
         ))}
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -outer * 0.014]}>
+        <mesh position={[0, 0, -outer * 0.014]}>
           <torusGeometry args={[rimR, 0.012, 8, 40]} />
           <meshPhysicalMaterial color={rimColor} metalness={0.85} roughness={0.2} />
         </mesh>

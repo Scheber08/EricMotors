@@ -1,7 +1,9 @@
 import type { Dictionary } from './index';
 import { enEngine } from './en-engine';
+import { enCar } from './en-car';
+import { mergeDictionaries } from './merge';
 
-export const en = {
+const base = {
   app: {
     tagline: 'Design your own cars and engines – from cylinder head to rear wing.',
     nav: { home: 'Home', garage: 'Garage' },
@@ -71,7 +73,6 @@ export const en = {
       'i4-20-diesel': '2.0 turbodiesel',
     },
   },
-  ...enEngine,
   errors: {
     title: 'Something went wrong.',
     text: 'Your designs are stored locally and are not lost.',
@@ -89,3 +90,5 @@ export const en = {
     calculating: 'Calculating …',
   },
 } satisfies Dictionary;
+
+export const en: Dictionary = mergeDictionaries(base, enEngine, enCar);

@@ -745,3 +745,58 @@ textarea {
   border-radius: 6px;
   overflow-x: auto;
 }
+
+/* ---------- Auto-Designer ---------- */
+
+.car-center {
+  display: grid;
+  grid-template-rows: auto auto;
+}
+.viewer {
+  position: relative;
+  height: min(52vh, 520px);
+  min-height: 280px;
+  background: radial-gradient(ellipse at 50% 35%, var(--surface) 0%, var(--bg) 75%);
+  border-bottom: 1px solid var(--border);
+}
+.viewer canvas {
+  touch-action: none;
+}
+.viewer-modes {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  background: var(--surface);
+}
+.viewer-fallback {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+.engine-summary {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+}
+.engine-summary .btn {
+  justify-self: start;
+}
+.zone {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

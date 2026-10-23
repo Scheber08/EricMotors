@@ -1,7 +1,9 @@
 import type { Dictionary } from './index';
 import { deEngine } from './de-engine';
+import { deCar } from './de-car';
+import { mergeDictionaries } from './merge';
 
-export const de = {
+const base = {
   app: {
     tagline: 'Konstruiere eigene Autos und Motoren – vom Zylinderkopf bis zum Heckflügel.',
     nav: { home: 'Start', garage: 'Garage' },
@@ -71,7 +73,6 @@ export const de = {
       'i4-20-diesel': '2.0 Turbodiesel',
     },
   },
-  ...deEngine,
   errors: {
     title: 'Hier ist etwas schiefgelaufen.',
     text: 'Deine Entwürfe sind lokal gespeichert und gehen nicht verloren.',
@@ -89,3 +90,5 @@ export const de = {
     calculating: 'Berechnet …',
   },
 } satisfies Dictionary;
+
+export const de: Dictionary = mergeDictionaries(base, deEngine, deCar);
