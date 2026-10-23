@@ -8,3 +8,4 @@ export * from './engine';
 export * from './car';
 export * from './migrate';
 export * from './templates';
+export * from './auth';

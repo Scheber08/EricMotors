@@ -26,8 +26,8 @@
   "vars": {
     "ENVIRONMENT": "production",
     "PUBLIC_ORIGIN": "https://car.scheber.com",
-    "MAX_VEHICLES_PER_USER": "50",
-    "MAX_VEHICLE_BYTES": "524288",
+    "MAX_DESIGNS_PER_USER": "50",
+    "MAX_DESIGN_BYTES": "524288",
   },
   "d1_databases": [
     {
@@ -41,6 +41,8 @@
   "ratelimits": [
     // Schreibende Endpoints: 30 Requests pro 60 s und Nutzer (approximativ pro Standort).
     { "name": "WRITE_LIMITER", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
+    // Login/Registrierung: 10 Versuche pro 60 s und IP (Schutz gegen Passwort-Raten).
+    { "name": "AUTH_LIMITER", "namespace_id": "1003", "simple": { "limit": 10, "period": 60 } },
   ],
 
   // ---------- Previews (jeder Nicht-main-Branch) ----------
@@ -49,8 +51,8 @@
     "vars": {
       "ENVIRONMENT": "preview",
       "PUBLIC_ORIGIN": "https://car.scheber.com",
-      "MAX_VEHICLES_PER_USER": "50",
-      "MAX_VEHICLE_BYTES": "524288",
+      "MAX_DESIGNS_PER_USER": "50",
+      "MAX_DESIGN_BYTES": "524288",
     },
     "d1_databases": [
       {
@@ -62,6 +64,7 @@
     "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "ericmotors-preview" }],
     "ratelimits": [
       { "name": "WRITE_LIMITER", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } },
+      { "name": "AUTH_LIMITER", "namespace_id": "1004", "simple": { "limit": 10, "period": 60 } },
     ],
   },
 }
