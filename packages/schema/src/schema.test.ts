@@ -67,3 +67,44 @@ describe('Migration', () => {
     expect(() => migrateEngine(null)).toThrow(SchemaVersionError);
   });
 });
+
+describe('Schema v2: Antrieb', () => {
+  it('migriert ein v1-Auto (Motor direkt im Auto) zum Verbrenner-Antrieb', () => {
+    const v2 = CAR_TEMPLATES['hot-hatch']();
+    const { powertrain, ...rest } = v2;
+    const v1 = { ...rest, schemaVersion: 1, engine: powertrain.engine };
+    const migrated = migrateCar(JSON.parse(JSON.stringify(v1)));
+    expect(migrated.schemaVersion).toBe(2);
+    expect(migrated.powertrain.type).toBe('ice');
+    expect(migrated.powertrain.engine).toEqual(powertrain.engine);
+    expect(migrated).not.toHaveProperty('engine');
+  });
+
+  it('Elektroauto braucht Motor und Batterie, aber keinen Verbrenner', () => {
+    const ev = CAR_TEMPLATES['e-compact']();
+    expect(Car.safeParse(ev).success).toBe(true);
+    expect(Car.safeParse({ ...ev, powertrain: { ...ev.powertrain, motors: [] } }).success).toBe(
+      false,
+    );
+    expect(
+      Car.safeParse({ ...ev, powertrain: { ...ev.powertrain, battery: undefined } }).success,
+    ).toBe(false);
+    expect(
+      Car.safeParse({
+        ...ev,
+        powertrain: { ...ev.powertrain, engine: CAR_TEMPLATES['hot-hatch']().powertrain.engine },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('Getriebe-E-Motor nur beim Hybrid, Hybrid braucht Verbrenner', () => {
+    const ev = CAR_TEMPLATES['e-compact']();
+    ev.powertrain.motors[0]!.position = 'gearbox';
+    expect(Car.safeParse(ev).success).toBe(false);
+    const hybrid = CAR_TEMPLATES['plugin-hybrid']();
+    expect(Car.safeParse(hybrid).success).toBe(true);
+    expect(
+      Car.safeParse({ ...hybrid, powertrain: { ...hybrid.powertrain, engine: undefined } }).success,
+    ).toBe(false);
+  });
+});
