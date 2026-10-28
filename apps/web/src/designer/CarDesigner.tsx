@@ -15,6 +15,8 @@ import { captureViewer } from './thumbnail';
 import { DesignerShell, type SectionDef } from './DesignerShell';
 import { normalizeCar, setGearCount } from './carNormalize';
 import type { ViewMode } from './car/CarViewer';
+import type { CameraView } from './car/camera';
+import { ViewerControls } from './car/ViewerControls';
 import {
   ColorField,
   type FieldContext,
@@ -65,6 +67,11 @@ export function CarDesigner({ id }: { id: string }) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'missing'>('loading');
   const [section, setSection] = useState<Section>('model');
   const [view, setView] = useState<ViewMode>('normal');
+  const [camera, setCamera] = useState<{ view: CameraView; key: number }>({
+    view: 'three-quarter',
+    key: 0,
+  });
+  const [autoRotate, setAutoRotate] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,9 +156,18 @@ export function CarDesigner({ id }: { id: string }) {
                 car={car}
                 analysis={analysis.result}
                 mode={view}
+                camera={camera.view}
+                cameraKey={camera.key}
+                autoRotate={autoRotate}
                 onSelect={(s) => setSection(s as Section)}
               />
             </Suspense>
+            <ViewerControls
+              camera={camera.view}
+              onCamera={(v) => setCamera((c) => ({ view: v, key: c.key + 1 }))}
+              autoRotate={autoRotate}
+              onAutoRotate={setAutoRotate}
+            />
             <div className="viewer-modes segmented" role="group" aria-label={t('designer.view')}>
               {(['normal', 'xray', 'exploded'] as const).map((m) => (
                 <button key={m} type="button" aria-pressed={view === m} onClick={() => setView(m)}>
