@@ -213,6 +213,35 @@ wird dann anteilig gekürzt.
 Gierträgheit, Antriebseinheiten (Achse, abgetastete Momentkurve inkl. E-Anteil, Übersetzungen),
 Batteriegrenze und -energie, Reifen, Aero-Flächen, Bremskraft, Fahrhilfen.
 
+## Testfahrt (`testdrive/vehicle.ts`, `testdrive/track.ts`)
+
+Echtzeit-Fahrmodell zum Selberfahren, abgeleitet aus der Analyse (keine eigenen Fahrzeugdaten):
+
+- **Zugkraft:** Hüllkurve aus den Zugkraftkurven (bester Gang je Antriebseinheit, Summe), begrenzt
+  durch die Systemleistung P/v (Batteriegrenze). Haftgrenze beim Antreiben μ · g · Anteil der
+  angetriebenen Achslast inkl. Lastverlagerung (Allrad 1). Hochschalten unterbricht die Zugkraft
+  0,15 s, Zurückschalten mit Hysterese.
+- **Widerstand und Bremsen:** Fahrwiderstandskurve der Analyse; Bremsverzögerung aus dem Bremsweg
+  100–0 (a = v² / 2s). Bremse im Stand legt den Rückwärtsgang ein (3 m/s², max. 8 m/s).
+- **Querdynamik:** Einspurmodell im Fahrzeugsystem mit Kammschem Kreis
+
+  ```
+  du/dt = a_x + w · r
+  dw/dt = a_y,Reifen − u · r,   a_y,Reifen = clamp(u · r − w / 0,08 s, ±√(a_max² − a_x²))
+  r_soll = u · tan δ / (L · (1 + K · u²)),   K = 0,0012 + 0,006 · max(0, Balance)
+  ```
+
+  a_max ist die berechnete Querbeschleunigung. Im Grenzbereich wird r_soll auf a_y/u begrenzt und
+  mit (1 − 2,5 · Balance) gewichtet: Untersteuerer schieben, Übersteuerer drehen ein. Handbremse:
+  45 % Seitenführung, Heck kommt (Faktor 1,6). Lenkeinschlag 0,6 rad / (1 + v / 14 m/s).
+
+- **Strecke:** geschlossener Catmull-Rom-Spline (≈ 2,3 km, 12 m breit), Randsteine in Kurven;
+  daneben Wiese mit 55 % Haftung und 0,07 g Zusatzwiderstand. Runden zählen nur in Fahrtrichtung
+  und nach Erreichen der Streckenhälfte.
+
+Abgleich (Tests): 0–100 im Fahrmodell innerhalb −25 %/+20 % der Analyse, Vmax und Bremsweg
+innerhalb weniger Prozent; ein einfacher Autopilot fährt mit Hypercar und Kombi je eine Runde ohne Ausritt.
+
 ## Literatur
 
 - J. B. Heywood: _Internal Combustion Engine Fundamentals_. McGraw-Hill, 1988.

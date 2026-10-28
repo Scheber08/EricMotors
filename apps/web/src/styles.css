@@ -1500,3 +1500,246 @@ textarea {
   gap: 2px;
   padding: 10px 14px 12px;
 }
+
+.viewer-drive {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- Testfahrt ---------- */
+
+.drive {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.drive-stage {
+  position: relative;
+  flex: 1;
+  height: calc(100dvh - 57px);
+  min-height: 360px;
+  background: #a9c8e8;
+  overflow: hidden;
+  user-select: none;
+}
+.drive-stage canvas {
+  touch-action: none;
+}
+.drive-hud {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  pointer-events: none;
+}
+.drive-hud > * {
+  pointer-events: auto;
+}
+.drive-top {
+  top: 12px;
+}
+.drive-bottom {
+  bottom: 12px;
+  align-items: flex-end;
+}
+.drive-panel {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow);
+  color: var(--fg);
+}
+.drive-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.drive-title strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.drive-laps {
+  min-width: 170px;
+  font-size: 13px;
+}
+.drive-laps dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 12px;
+  margin: 4px 0 0;
+}
+.drive-laps dt {
+  color: var(--muted);
+}
+.drive-laps dd {
+  margin: 0;
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.drive-best {
+  color: var(--ok);
+}
+.drive-help {
+  max-width: 340px;
+  font-size: 13px;
+}
+.drive-help summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.drive-help ul {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.drive-help kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font: 12px var(--mono);
+  text-align: center;
+}
+.drive-right {
+  margin-left: auto;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+.drive-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 6px;
+}
+.drive-speedo {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 4px 18px;
+  min-width: 220px;
+}
+.drive-flags {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 6px;
+  min-height: 20px;
+}
+.drive-flag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+.drive-flag.warn {
+  color: var(--warn);
+}
+.drive-speed {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.drive-speed-value {
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.drive-gear {
+  display: grid;
+  justify-items: center;
+  font-size: 12px;
+}
+.drive-gear strong {
+  font-size: 30px;
+  line-height: 1;
+  color: var(--accent);
+}
+.drive-rpm {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.drive-rpm span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.1s linear;
+}
+.drive-rpm span.redline {
+  background: var(--error);
+}
+.drive-touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .drive-touch {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+  .drive-touch > div {
+    display: flex;
+    gap: 12px;
+  }
+  .drive-touch button {
+    width: 72px;
+    height: 72px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+    color: var(--fg);
+    font-weight: 700;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  .drive-touch .throttle {
+    background: color-mix(in srgb, var(--accent) 75%, transparent);
+    color: var(--accent-fg);
+  }
+  .drive-help {
+    display: none;
+  }
+  .drive-bottom {
+    bottom: 104px;
+  }
+}
+@media (max-width: 640px) {
+  .drive-top {
+    flex-direction: column;
+  }
+  .drive-laps {
+    align-self: flex-end;
+  }
+  .drive-speedo {
+    min-width: 0;
+  }
+  .drive-speed-value {
+    font-size: 34px;
+  }
+}

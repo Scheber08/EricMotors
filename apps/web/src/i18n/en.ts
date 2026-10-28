@@ -2,6 +2,7 @@ import type { Dictionary } from './index';
 import { enEngine } from './en-engine';
 import { enCar } from './en-car';
 import { enCommunity } from './en-community';
+import { enDrive } from './en-drive';
 import { mergeDictionaries } from './merge';
 
 const base = {
@@ -96,4 +97,4 @@ const base = {
   },
 } satisfies Dictionary;
 
-export const en: Dictionary = mergeDictionaries(base, enEngine, enCar, enCommunity);
+export const en: Dictionary = mergeDictionaries(base, enEngine, enCar, enCommunity, enDrive);

@@ -78,6 +78,11 @@ function DocList({
             <Link className="btn small primary" href={`/${kind}/${item.id}`}>
               {t('garage.open')}
             </Link>
+            {kind === 'car' && (
+              <Link className="btn small" href={`/car/${item.id}/drive`}>
+                {t('garage.drive')}
+              </Link>
+            )}
             <button type="button" className="btn small" onClick={() => void duplicate(item.id)}>
               {t('garage.duplicate')}
             </button>
