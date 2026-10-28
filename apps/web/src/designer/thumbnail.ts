@@ -22,8 +22,13 @@ export async function captureViewer(container: Element | null): Promise<Blob | n
   out.height = H;
   const ctx = out.getContext('2d');
   if (!ctx) return null;
-  const bg =
-    getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff';
+  // Studiohintergrund wie in der 3D-Ansicht (das Canvas selbst ist transparent).
+  const css = getComputedStyle(document.documentElement);
+  const token = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, token('--stage-top', '#fbfbfc'));
+  bg.addColorStop(0.62, token('--stage-mid', '#eceef1'));
+  bg.addColorStop(1, token('--stage-bottom', '#d9dce1'));
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   const scale = Math.max(W / source.width, H / source.height);

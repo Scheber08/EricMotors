@@ -23,6 +23,10 @@
   --chart-grid: #e2e5ea;
   --radius: 10px;
   --shadow: 0 1px 2px rgb(15 23 42 / 6%), 0 4px 16px rgb(15 23 42 / 6%);
+  --stage-top: #fbfbfc;
+  --stage-mid: #eceef1;
+  --stage-bottom: #d9dce1;
+  --stage-floor: rgb(255 255 255 / 75%);
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   color-scheme: light;
@@ -54,11 +58,19 @@
     --chart-6: #facc15;
     --chart-grid: #26324d;
     --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 30%);
+    --stage-top: #17213a;
+    --stage-mid: #0f1729;
+    --stage-bottom: #070b14;
+    --stage-floor: rgb(120 140 180 / 14%);
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
+  --stage-top: #17213a;
+  --stage-mid: #0f1729;
+  --stage-bottom: #070b14;
+  --stage-floor: rgb(120 140 180 / 14%);
   --bg: #0b1120;
   --surface: #111a2e;
   --surface-2: #17223a;
@@ -766,10 +778,14 @@ textarea {
 }
 .viewer {
   position: relative;
-  height: min(52vh, 520px);
-  min-height: 280px;
-  background: radial-gradient(ellipse at 50% 35%, var(--surface) 0%, var(--bg) 75%);
+  height: min(56vh, 560px);
+  min-height: 300px;
+  /* Studio: heller Horizont, zum Boden hin abgedunkelt. */
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 78%, var(--stage-floor) 0%, transparent 70%),
+    linear-gradient(180deg, var(--stage-top) 0%, var(--stage-mid) 62%, var(--stage-bottom) 100%);
   border-bottom: 1px solid var(--border);
+  overflow: hidden;
 }
 .viewer canvas {
   touch-action: none;
@@ -779,6 +795,51 @@ textarea {
   left: 12px;
   bottom: 12px;
   background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.viewer-tools {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow);
+}
+.viewer-tools-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: var(--border);
+}
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.icon-btn:hover {
+  color: var(--fg);
+  background: var(--surface-2);
+}
+.icon-btn[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 .viewer-fallback {
   display: grid;
@@ -1380,4 +1441,62 @@ textarea {
 .icon-segmented svg {
   width: 24px;
   height: 16px;
+}
+
+/* ---------- Vorlagen- und Garagenkarten mit Seitenansicht ---------- */
+
+.template-card {
+  display: grid;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.template-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+.template-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.template-stage {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  height: 130px;
+  padding: 28px 14px 6px;
+  border-radius: 8px;
+  background: linear-gradient(
+    180deg,
+    var(--stage-top) 0%,
+    var(--stage-mid) 70%,
+    var(--stage-bottom) 100%
+  );
+  color: var(--fg);
+}
+.template-card .template-stage {
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+}
+.car-silhouette {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+.template-card:hover .car-silhouette {
+  transform: translateX(3px);
+  transition: transform 0.25s ease;
+}
+.template-body {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px 12px;
 }
