@@ -18,6 +18,9 @@ const CarDesigner = lazy(() =>
 const DesignPage = lazy(() =>
   import('./pages/DesignPage').then((m) => ({ default: m.DesignPage })),
 );
+const DrivePage = lazy(() =>
+  import('./testdrive/DrivePage').then((m) => ({ default: m.DrivePage })),
+);
 const EngineDesigner = lazy(() =>
   import('./designer/EngineDesigner').then((m) => ({ default: m.EngineDesigner })),
 );
@@ -41,6 +44,7 @@ export function App() {
             <Route path="/account" component={AccountPage} />
             <Route path="/u/:username">{(p) => <ProfilePage username={p.username} />}</Route>
             <Route path="/v/:id">{(p) => <DesignPage id={p.id} />}</Route>
+            <Route path="/car/:id/drive">{(p) => <DrivePage id={p.id} />}</Route>
             <Route path="/car/:id">{(p) => <CarDesigner id={p.id} />}</Route>
             <Route path="/engine/:id">{(p) => <EngineDesigner id={p.id} />}</Route>
             <Route>

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { type CarAnalysis, energyCostPer100km } from '@ericmotors/physics';
 import { BodyShape, Car } from '@ericmotors/schema';
 import { useLocale, useT } from '../i18n';
@@ -72,6 +72,7 @@ export function CarDesigner({ id }: { id: string }) {
     key: 0,
   });
   const [autoRotate, setAutoRotate] = useState(false);
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     let cancelled = false;
@@ -168,6 +169,33 @@ export function CarDesigner({ id }: { id: string }) {
               autoRotate={autoRotate}
               onAutoRotate={setAutoRotate}
             />
+            <button
+              type="button"
+              className="btn primary small viewer-drive"
+              title={t('drive.startHint')}
+              onClick={() => {
+                // Ausstehende Autosave-Änderungen sofort sichern, die Testfahrt lädt aus der Garage.
+                void (valid ? garage.saveCar(car) : Promise.resolve()).then(() =>
+                  navigate(`/car/${car.id}/drive`),
+                );
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="8.5" />
+                <circle cx="12" cy="12" r="2" />
+                <path d="M3.8 10.5h5.4M14.8 10.5h5.4M12 14v6.3" />
+              </svg>
+              {t('drive.start')}
+            </button>
             <div className="viewer-modes segmented" role="group" aria-label={t('designer.view')}>
               {(['normal', 'xray', 'exploded'] as const).map((m) => (
                 <button key={m} type="button" aria-pressed={view === m} onClick={() => setView(m)}>

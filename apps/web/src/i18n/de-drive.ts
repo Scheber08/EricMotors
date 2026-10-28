@@ -1,0 +1,36 @@
+/** Deutsche Texte für die Testfahrt. */
+export const deDrive = {
+  garage: { drive: 'Fahren' },
+  drive: {
+    start: 'Testfahrt',
+    startHint: 'Auf der Teststrecke selbst fahren',
+    title: 'Testfahrt · {name}',
+    back: 'Zurück zum Designer',
+    loading: 'Strecke wird vorbereitet …',
+    notDrivable: 'Dieses Auto kann noch nicht fahren: {reason}',
+    noTraction: 'kein Antrieb',
+    lap: 'Runde',
+    current: 'Aktuell',
+    last: 'Letzte',
+    best: 'Beste',
+    gear: 'Gang',
+    reverse: 'R',
+    offTrack: 'Abseits der Strecke',
+    drifting: 'Drift',
+    reset: 'Neu starten',
+    camera: { label: 'Kamera', chase: 'Verfolger', near: 'Nah', hood: 'Motorhaube', top: 'Vogel' },
+    help: {
+      title: 'Steuerung',
+      throttle: 'Gas',
+      brake: 'Bremse / rückwärts',
+      steer: 'Lenken',
+      handbrake: 'Handbremse',
+      camera: 'Kamera wechseln',
+      reset: 'Neu starten',
+      gamepad: 'Gamepad: Stick lenkt, Trigger geben Gas und bremsen.',
+    },
+    touch: { left: 'Links', right: 'Rechts', throttle: 'Gas', brake: 'Bremse' },
+    values:
+      'Fahrwerte aus der Berechnung: 0–100 in {accel}, Vmax {vmax}, Querbeschleunigung {lat}.',
+  },
+};

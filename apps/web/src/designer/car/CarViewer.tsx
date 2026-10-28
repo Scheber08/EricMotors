@@ -451,6 +451,12 @@ function rimProfile(rimR: number, width: number): THREE.Vector2[] {
   return pts.map(([r, y]) => new THREE.Vector2(r, y));
 }
 
+/** Lenkeinschlag (rad, links positiv) und Raddrehwinkel (rad) für die Testfahrt. */
+export interface WheelMotion {
+  steer: number;
+  spin: number;
+}
+
 function Wheel({
   car,
   layout,
@@ -458,6 +464,7 @@ function Wheel({
   side,
   mode,
   onSelect,
+  motion,
 }: {
   car: Car;
   layout: BodyLayout;
@@ -465,7 +472,16 @@ function Wheel({
   side: 1 | -1;
   mode: ViewMode;
   onSelect: (s: string) => void;
+  motion?: { current: WheelMotion } | undefined;
 }) {
+  const steerRef = useRef<THREE.Group>(null);
+  const spinRef = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (!motion) return;
+    if (steerRef.current && axle === 0) steerRef.current.rotation.y = motion.current.steer;
+    // Drehkörperachse zeigt nach außen: links ISO +y, rechts −y.
+    if (spinRef.current) spinRef.current.rotation.y = side * motion.current.spin;
+  });
   const w = layout.wheels[axle]!;
   const tire = axle === 0 ? car.wheels.front : car.wheels.rear;
   const brake = axle === 0 ? car.brakes.front : car.brakes.rear;
@@ -507,134 +523,142 @@ function Wheel({
   return (
     <group
       position={position}
-      rotation={[side === 1 ? -Math.PI / 2 : Math.PI / 2, 0, 0]}
       onClick={(e) => {
         e.stopPropagation();
         onSelect('wheels');
       }}
     >
-      <mesh geometry={tireGeo} castShadow>
-        <meshStandardMaterial color="#141517" roughness={0.88} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh geometry={rimGeo}>
-        <meshPhysicalMaterial
-          color={rimColor}
-          metalness={0.8}
-          roughness={0.28}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-      {/* Dunkler Innenraum der Felge */}
-      <mesh position={[0, -width * 0.2, 0]}>
-        <cylinderGeometry args={[rimR - 0.015, rimR - 0.015, 0.01, 40]} />
-        <meshStandardMaterial color="#0c0d0f" roughness={0.9} />
-      </mesh>
-      {/* Felgenstern bzw. -scheibe */}
-      <group position={[0, face, 0]}>
-        {(design === 'steel' || design === 'aero') && (
-          <mesh>
-            <cylinderGeometry args={[rimR - 0.012, rimR - 0.006, 0.014, 48]} />
-            {design === 'aero' ? (
+      <group ref={steerRef}>
+        <group rotation={[side === 1 ? -Math.PI / 2 : Math.PI / 2, 0, 0]}>
+          <group ref={spinRef}>
+            <mesh geometry={tireGeo} castShadow>
+              <meshStandardMaterial color="#141517" roughness={0.88} side={THREE.DoubleSide} />
+            </mesh>
+            <mesh geometry={rimGeo}>
               <meshPhysicalMaterial
                 color={rimColor}
-                metalness={0.6}
-                roughness={0.3}
-                clearcoat={1}
+                metalness={0.8}
+                roughness={0.28}
+                side={THREE.DoubleSide}
               />
-            ) : (
-              rimMat
-            )}
-          </mesh>
-        )}
-        {design === 'steel' &&
-          Array.from({ length: 8 }, (_, i) => {
-            const a = (i / 8) * Math.PI * 2;
-            return (
-              <mesh
-                key={i}
-                position={[Math.cos(a) * rimR * 0.62, 0.008, Math.sin(a) * rimR * 0.62]}
-              >
-                <cylinderGeometry args={[rimR * 0.1, rimR * 0.1, 0.004, 16]} />
-                <meshStandardMaterial color="#060607" />
-              </mesh>
-            );
-          })}
-        {design === 'aero' &&
-          Array.from({ length: 5 }, (_, i) => {
-            const a = (i / 5) * Math.PI * 2;
-            return (
-              <mesh
-                key={i}
-                position={[Math.cos(a) * rimR * 0.68, 0.008, Math.sin(a) * rimR * 0.68]}
-                rotation={[0, -a, 0]}
-              >
-                <boxGeometry args={[rimR * 0.22, 0.004, rimR * 0.08]} />
-                <meshStandardMaterial color="#060607" />
-              </mesh>
-            );
-          })}
-        {Array.from({ length: spokes }, (_, i) => {
-          const a = (i / spokes) * Math.PI * 2;
-          const thin = spokes > 8;
-          const len = rimR * 0.86;
-          return (
-            <mesh
-              key={i}
-              position={[Math.cos(a) * len * 0.55, 0, Math.sin(a) * len * 0.55]}
-              rotation={[0, -a + (design === 'mesh' ? (i % 2 ? 0.35 : -0.35) : 0), 0]}
-            >
-              <boxGeometry args={[len * 0.9, 0.022, thin ? 0.018 : 0.05]} />
-              {rimMat}
             </mesh>
-          );
-        })}
-        {/* Nabe, Radmuttern, Nabendeckel */}
-        <mesh>
-          <cylinderGeometry args={[rimR * 0.24, rimR * 0.26, 0.03, 32]} />
-          {rimMat}
-        </mesh>
-        {Array.from({ length: 5 }, (_, i) => {
-          const a = (i / 5) * Math.PI * 2;
-          return (
-            <mesh key={i} position={[Math.cos(a) * rimR * 0.16, 0.018, Math.sin(a) * rimR * 0.16]}>
-              <cylinderGeometry args={[0.011, 0.011, 0.012, 6]} />
-              <meshStandardMaterial color="#9aa0a8" metalness={1} roughness={0.3} />
+            {/* Dunkler Innenraum der Felge */}
+            <mesh position={[0, -width * 0.2, 0]}>
+              <cylinderGeometry args={[rimR - 0.015, rimR - 0.015, 0.01, 40]} />
+              <meshStandardMaterial color="#0c0d0f" roughness={0.9} />
             </mesh>
-          );
-        })}
-        <mesh position={[0, 0.02, 0]}>
-          <cylinderGeometry args={[rimR * 0.09, rimR * 0.1, 0.012, 24]} />
-          <meshStandardMaterial color="#1a1b1e" metalness={0.5} roughness={0.35} />
-        </mesh>
-      </group>
-      {/* Bremse: Scheibe mit Topf und Sattel hinter dem Felgenstern */}
-      {brake.type !== 'drum' && (
-        <group
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect('brakes');
-          }}
-        >
-          <mesh position={[0, face - 0.05, 0]}>
-            <cylinderGeometry args={[discR, discR, 0.024, 48]} />
-            <meshStandardMaterial color={discColor} metalness={0.8} roughness={0.35} />
-          </mesh>
-          <mesh position={[0, face - 0.035, 0]}>
-            <cylinderGeometry args={[discR * 0.45, discR * 0.45, 0.03, 32]} />
-            <meshStandardMaterial color="#5a5e64" metalness={0.6} roughness={0.5} />
-          </mesh>
-          <group rotation={[0, (axle === 0 ? 1 : -1) * side * 0.9, 0]}>
-            <RoundedBox
-              args={[0.07, 0.06, discR * 0.95]}
-              radius={0.015}
-              smoothness={2}
-              position={[discR * 0.82, face - 0.045, 0]}
-            >
-              <meshPhysicalMaterial color={caliperColor} roughness={0.35} clearcoat={0.8} />
-            </RoundedBox>
+            {/* Felgenstern bzw. -scheibe */}
+            <group position={[0, face, 0]}>
+              {(design === 'steel' || design === 'aero') && (
+                <mesh>
+                  <cylinderGeometry args={[rimR - 0.012, rimR - 0.006, 0.014, 48]} />
+                  {design === 'aero' ? (
+                    <meshPhysicalMaterial
+                      color={rimColor}
+                      metalness={0.6}
+                      roughness={0.3}
+                      clearcoat={1}
+                    />
+                  ) : (
+                    rimMat
+                  )}
+                </mesh>
+              )}
+              {design === 'steel' &&
+                Array.from({ length: 8 }, (_, i) => {
+                  const a = (i / 8) * Math.PI * 2;
+                  return (
+                    <mesh
+                      key={i}
+                      position={[Math.cos(a) * rimR * 0.62, 0.008, Math.sin(a) * rimR * 0.62]}
+                    >
+                      <cylinderGeometry args={[rimR * 0.1, rimR * 0.1, 0.004, 16]} />
+                      <meshStandardMaterial color="#060607" />
+                    </mesh>
+                  );
+                })}
+              {design === 'aero' &&
+                Array.from({ length: 5 }, (_, i) => {
+                  const a = (i / 5) * Math.PI * 2;
+                  return (
+                    <mesh
+                      key={i}
+                      position={[Math.cos(a) * rimR * 0.68, 0.008, Math.sin(a) * rimR * 0.68]}
+                      rotation={[0, -a, 0]}
+                    >
+                      <boxGeometry args={[rimR * 0.22, 0.004, rimR * 0.08]} />
+                      <meshStandardMaterial color="#060607" />
+                    </mesh>
+                  );
+                })}
+              {Array.from({ length: spokes }, (_, i) => {
+                const a = (i / spokes) * Math.PI * 2;
+                const thin = spokes > 8;
+                const len = rimR * 0.86;
+                return (
+                  <mesh
+                    key={i}
+                    position={[Math.cos(a) * len * 0.55, 0, Math.sin(a) * len * 0.55]}
+                    rotation={[0, -a + (design === 'mesh' ? (i % 2 ? 0.35 : -0.35) : 0), 0]}
+                  >
+                    <boxGeometry args={[len * 0.9, 0.022, thin ? 0.018 : 0.05]} />
+                    {rimMat}
+                  </mesh>
+                );
+              })}
+              {/* Nabe, Radmuttern, Nabendeckel */}
+              <mesh>
+                <cylinderGeometry args={[rimR * 0.24, rimR * 0.26, 0.03, 32]} />
+                {rimMat}
+              </mesh>
+              {Array.from({ length: 5 }, (_, i) => {
+                const a = (i / 5) * Math.PI * 2;
+                return (
+                  <mesh
+                    key={i}
+                    position={[Math.cos(a) * rimR * 0.16, 0.018, Math.sin(a) * rimR * 0.16]}
+                  >
+                    <cylinderGeometry args={[0.011, 0.011, 0.012, 6]} />
+                    <meshStandardMaterial color="#9aa0a8" metalness={1} roughness={0.3} />
+                  </mesh>
+                );
+              })}
+              <mesh position={[0, 0.02, 0]}>
+                <cylinderGeometry args={[rimR * 0.09, rimR * 0.1, 0.012, 24]} />
+                <meshStandardMaterial color="#1a1b1e" metalness={0.5} roughness={0.35} />
+              </mesh>
+            </group>
           </group>
+          {/* Bremse: Scheibe mit Topf und Sattel hinter dem Felgenstern */}
+          {brake.type !== 'drum' && (
+            <group
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect('brakes');
+              }}
+            >
+              <mesh position={[0, face - 0.05, 0]}>
+                <cylinderGeometry args={[discR, discR, 0.024, 48]} />
+                <meshStandardMaterial color={discColor} metalness={0.8} roughness={0.35} />
+              </mesh>
+              <mesh position={[0, face - 0.035, 0]}>
+                <cylinderGeometry args={[discR * 0.45, discR * 0.45, 0.03, 32]} />
+                <meshStandardMaterial color="#5a5e64" metalness={0.6} roughness={0.5} />
+              </mesh>
+              <group rotation={[0, (axle === 0 ? 1 : -1) * side * 0.9, 0]}>
+                <RoundedBox
+                  args={[0.07, 0.06, discR * 0.95]}
+                  radius={0.015}
+                  smoothness={2}
+                  position={[discR * 0.82, face - 0.045, 0]}
+                >
+                  <meshPhysicalMaterial color={caliperColor} roughness={0.35} clearcoat={0.8} />
+                </RoundedBox>
+              </group>
+            </group>
+          )}
         </group>
-      )}
+      </group>
     </group>
   );
 }
@@ -813,6 +837,46 @@ function CameraRig({
     return () => controls.removeEventListener('start', stop);
   }, [controls]);
   return null;
+}
+
+const noop = () => {};
+
+/**
+ * Auto ohne Bühne und Kamera (Karosserie, Spiegel, Anbauteile, Räder), z. B. für die Testfahrt.
+ * Ursprung: Mitte Vorderachse auf der Fahrbahn, in three.js-Koordinaten.
+ */
+export function CarModel({
+  car,
+  wheelMotion,
+}: {
+  car: Car;
+  wheelMotion?: { current: WheelMotion };
+}) {
+  const { model, wheels, suspension, powertrain } = car;
+  const layout = useMemo(
+    () => bodyLayout(car),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [model, wheels, suspension.rideHeight, powertrain, car.aero],
+  );
+  return (
+    <>
+      <Body car={car} layout={layout} mode="normal" onSelect={noop} />
+      {([0, 1] as const).flatMap((axle) =>
+        ([1, -1] as const).map((side) => (
+          <Wheel
+            key={`${axle}${side}`}
+            car={car}
+            layout={layout}
+            axle={axle}
+            side={side}
+            mode="normal"
+            onSelect={noop}
+            motion={wheelMotion}
+          />
+        )),
+      )}
+    </>
+  );
 }
 
 export function CarViewer({

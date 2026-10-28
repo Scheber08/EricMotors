@@ -38,6 +38,12 @@ spielnah, aber mit plausiblen Formeln und echten Einheiten.
 - Galerie mit Filtern, Detailseite mit 3D-Ansicht und Datenblatt, Profilseiten.
 - Likes, Melden, „Als Vorlage übernehmen“ mit Herkunftsangabe, Teilen-Links mit Link-Vorschau.
 
+## Testfahrt
+
+- Jedes Auto aus der Garage auf einer 3D-Teststrecke selbst fahren (Tastatur, Gamepad oder
+  Touch). Beschleunigung, Gänge, Höchstgeschwindigkeit, Bremsen, Kurvenhaftung und Unter- bzw.
+  Übersteuern folgen aus den berechneten Fahrzeugwerten. Rundenzeiten, vier Kameras.
+
 ## Aufbau
 
 | Pfad               | Inhalt                                                                       |

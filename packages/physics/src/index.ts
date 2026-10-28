@@ -21,3 +21,5 @@ export * from './car/consumption';
 export * from './electric/motor';
 export * from './electric/battery';
 export * from './simulation';
+export * from './testdrive/vehicle';
+export * from './testdrive/track';
