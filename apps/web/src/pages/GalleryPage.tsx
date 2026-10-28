@@ -4,6 +4,7 @@ import { BodyShape } from '@ericmotors/schema';
 import { api } from '../api/client';
 import { DesignCard } from '../community/DesignCard';
 import { apiErrorMessage } from '../community/errors';
+import { OPTION_ICONS } from '../designer/icons';
 import { useT } from '../i18n';
 
 interface Filters {
@@ -11,6 +12,7 @@ interface Filters {
   sort: 'recent' | 'likes';
   category: string;
   layout: string;
+  powertrain: '' | 'ice' | 'electric' | 'hybrid';
   minPowerW: string;
 }
 
@@ -23,6 +25,7 @@ export function GalleryPage() {
     sort: 'recent',
     category: '',
     layout: '',
+    powertrain: '',
     minPowerW: '',
   });
   const [items, setItems] = useState<DesignMeta[]>([]);
@@ -73,7 +76,11 @@ export function GalleryPage() {
 
   const set = (patch: Partial<Filters>) => {
     setState('loading');
-    setFilters((f) => ({ ...f, ...patch, ...(patch.kind ? { category: '', layout: '' } : {}) }));
+    setFilters((f) => ({
+      ...f,
+      ...patch,
+      ...(patch.kind ? { category: '', layout: '', powertrain: '' } : {}),
+    }));
   };
   const categories =
     filters.kind === 'car' ? BodyShape.options : (['inline', 'v', 'boxer'] as const);
@@ -98,6 +105,25 @@ export function GalleryPage() {
             </button>
           ))}
         </div>
+        {filters.kind === 'car' && (
+          <div
+            className="segmented icon-segmented"
+            role="group"
+            aria-label={t('params.car.powertrainType')}
+          >
+            {(['', 'ice', 'electric', 'hybrid'] as const).map((p) => (
+              <button
+                key={p || 'all'}
+                type="button"
+                aria-pressed={filters.powertrain === p}
+                onClick={() => set({ powertrain: p })}
+              >
+                {p && OPTION_ICONS.powertrainType![p]}
+                {p ? t(`options.params.car.powertrainType.${p}`) : t('gallery.all')}
+              </button>
+            ))}
+          </div>
+        )}
         <select
           className="select"
           aria-label={t('gallery.sort')}

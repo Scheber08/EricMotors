@@ -3,9 +3,10 @@ export const deCar = {
   sections: {
     car: {
       model: 'Modell',
-      engine: 'Motor',
+      powertrain: 'Antrieb',
+      engine: 'Verbrennungsmotor',
       trim: 'Ausstattung',
-      drivetrain: 'Antrieb',
+      drivetrain: 'Kraftübertragung',
       suspension: 'Fahrwerk',
       wheels: 'Räder',
       brakes: 'Bremsen',
@@ -15,6 +16,20 @@ export const deCar = {
   },
   params: {
     car: {
+      powertrainType: 'Antriebsart',
+      plugIn: 'Plug-in (an der Steckdose ladbar)',
+      motorPosition: 'Einbauort',
+      motorCount: 'Anzahl',
+      motorType: 'Motorbauart',
+      peakPower: 'Spitzenleistung je Motor',
+      motorMaxSpeed: 'Höchstdrehzahl',
+      reduction: 'Untersetzung',
+      motorCooling: 'Motorkühlung',
+      chemistry: 'Zellchemie',
+      cells: 'Zellauslegung',
+      capacity: 'Kapazität (nutzbar)',
+      voltage: 'Spannungsebene',
+      batteryCooling: 'Batteriekühlung',
       shape: 'Grundform',
       length: 'Länge',
       width: 'Breite',
@@ -112,6 +127,15 @@ export const deCar = {
     },
     params: {
       car: {
+        powertrainType: { ice: 'Verbrenner', electric: 'Elektro', hybrid: 'Hybrid' },
+        motorPosition: { front: 'Vorderachse', rear: 'Hinterachse', gearbox: 'Am Getriebe' },
+        motorCount: { 1: 'Ein Motor', 2: 'Je Rad einer' },
+        motorType: { pmsm: 'PM-Synchron', induction: 'Asynchron', 'axial-flux': 'Axialfluss' },
+        motorCooling: { air: 'Luft', liquid: 'Wasser', 'oil-spray': 'Ölsprüh' },
+        chemistry: { lfp: 'LFP', nmc: 'NMC', nca: 'NCA', 'solid-state': 'Festkörper' },
+        cells: { energy: 'Energie', balanced: 'Ausgewogen', power: 'Leistung' },
+        voltage: { '400V': '400 V', '800V': '800 V' },
+        batteryCooling: { passive: 'Passiv', air: 'Luft', liquid: 'Flüssig' },
         shape: {
           coupe: 'Coupé',
           sedan: 'Limousine',
@@ -223,6 +247,23 @@ export const deCar = {
   help: {
     params: {
       car: {
+        powertrainType:
+          'Verbrenner aus der Motor-Bibliothek, reiner Elektroantrieb oder Parallelhybrid (Verbrenner plus E-Motor).',
+        plugIn:
+          'Plug-in-Hybride haben eine große Batterie und fahren im Alltag oft elektrisch – das senkt den Normverbrauch stark.',
+        motorPosition:
+          'An einer Achse mit eigener Untersetzung oder (nur Hybrid) zwischen Verbrenner und Getriebe.',
+        motorCount: 'Je Rad ein Motor ermöglicht Torque Vectoring: mehr Traktion und Kurvengrip.',
+        motorType:
+          'Permanentmagnet: effizient. Asynchron: günstig, ohne Magnete. Axialfluss: sehr leicht und stark, aber teuer.',
+        reduction:
+          'Kurze Untersetzung (hohe Zahl) beschleunigt stärker, begrenzt aber die Höchstgeschwindigkeit über die Motordrehzahl.',
+        chemistry:
+          'LFP: günstig und langlebig, schwer. NMC/NCA: hohe Energiedichte. Festkörper: leicht und schnellladefähig, teuer.',
+        cells:
+          'Energiezellen speichern mehr pro kg, Leistungszellen geben viel mehr Leistung ab (Sportwagen, Hybride).',
+        capacity: 'Mehr Kapazität bringt Reichweite und Leistung, kostet aber Gewicht und Geld.',
+        voltage: '800 Volt verdoppelt die Schnellladeleistung.',
         shape: 'Grundform der Karosserie. Bestimmt Dachlinie, Heck und Grund-cw-Wert.',
         wheelbase: 'Abstand der Achsen. Lang = ruhiger Geradeauslauf und Platz, kurz = wendig.',
         chassis:
@@ -262,6 +303,15 @@ export const deCar = {
   },
   stats: {
     car: {
+      electricConsumption: 'Stromverbrauch',
+      fromGrid: 'ab Steckdose',
+      chargeTime: 'Schnellladen 10–80 %',
+      chargeHint: 'bis {power}',
+      electricRange: 'davon {value} elektrisch',
+      fade: '{stops} Vollbremsungen bis Fading',
+      energyCost: 'Energiekosten',
+      per100km: 'pro 100 km',
+      stiffness: 'Torsionssteifigkeit',
       power: 'Leistung',
       mass: 'Leergewicht',
       accel: 'Beschleunigung',
@@ -279,7 +329,8 @@ export const deCar = {
     },
   },
   charts: {
-    traction: 'Zugkraft je Gang und Fahrwiderstand (kN)',
+    motorCurve: 'E-Motor {axle}',
+    traction: 'Zugkraft je Gang bzw. E-Motor und Fahrwiderstand (kN)',
     resistance: 'Fahrwiderstand',
   },
   ratings: {
@@ -293,6 +344,7 @@ export const deCar = {
       offroad: 'Offroad',
       reliability: 'Zuverlässigkeit',
       prestige: 'Prestige',
+      environment: 'Umwelt',
     },
   },
   warnings: {
@@ -350,6 +402,42 @@ export const deCar = {
         fix: 'Größere Scheiben, mehr Kolben oder bessere Beläge verbauen.',
       },
       overheating: { text: 'Der Motor droht zu überhitzen.', fix: 'Kühlluftöffnungen vergrößern.' },
+      batteryLimitsPower: {
+        text: 'Die Batterie kann nicht die volle Motorleistung liefern.',
+        fix: 'Größere Batterie, Leistungszellen oder bessere Batteriekühlung wählen.',
+      },
+      rangeShort: {
+        text: 'Die Reichweite ist sehr kurz.',
+        fix: 'Batterie vergrößern, Luftwiderstand senken oder Gewicht sparen.',
+      },
+      plugInRangeShort: {
+        text: 'Wenig elektrische Reichweite für einen Plug-in-Hybrid.',
+        fix: 'Batterie vergrößern.',
+      },
+      batteryCooling: {
+        text: 'Passive Kühlung reicht für diese Batterieleistung nicht.',
+        fix: 'Luft- oder Flüssigkeitskühlung wählen.',
+      },
+      chargeSlow: {
+        text: 'Das Schnellladen dauert sehr lange.',
+        fix: '800-Volt-Technik, Flüssigkeitskühlung oder eine andere Zellchemie wählen.',
+      },
+      layoutMismatch: {
+        text: 'Die Antriebsart passt nicht zur Lage der E-Motoren.',
+        fix: 'Antriebsart an die Motoren anpassen.',
+      },
+      motorSpeedLimit: {
+        text: 'Die Höchstgeschwindigkeit wird von der Motordrehzahl begrenzt.',
+        fix: 'Kleinere Untersetzung oder höherdrehenden Motor wählen.',
+      },
+      brakeFade: {
+        text: 'Die Bremsen überhitzen schnell (Fading).',
+        fix: 'Innenbelüftete oder Keramikscheiben, größere Scheiben oder mehr Kühlluft.',
+      },
+      chassisFlex: {
+        text: 'Die Karosserie ist für diese Querkräfte zu weich.',
+        fix: 'Monocoque, steiferes Material oder geschlossene Karosserieform wählen.',
+      },
       brakeRimClearance: {
         text: 'Die Bremsscheibe passt nicht in die Felge.',
         fix: 'Größere Felgen oder kleinere Bremsscheiben wählen.',
@@ -392,10 +480,28 @@ export const deCar = {
     cooling: 'Kühlung',
     electrical: 'Elektrik',
     aero: 'Aero-Teile',
+    motors: 'E-Motoren',
+    battery: 'Batterie',
     misc: 'Sonstiges',
   },
   designer: {
+    addMotor: 'E-Motor {position}',
+    removeMotor: 'Motor entfernen',
+    motorTitle: 'E-Motor · {position}',
+    battery: 'Batterie',
+    powertrainDiagram: 'Antriebs-Schema in Draufsicht',
+    systemPower: 'Systemleistung',
+    batteryPower: 'Batterie max. {value}',
     view: 'Ansicht',
+    camera: {
+      label: 'Kamera',
+      'three-quarter': 'Dreiviertelansicht',
+      front: 'Vorderansicht',
+      side: 'Seitenansicht',
+      rear: 'Heckansicht',
+      top: 'Draufsicht',
+      turntable: 'Drehteller',
+    },
     views: { normal: 'Normal', xray: 'Röntgen', exploded: 'Explosion' },
     shape: 'Form',
     chassis: 'Chassis',

@@ -14,6 +14,15 @@ export interface AeroProperties {
   liftRear: number;
 }
 
+/** Felgendesign: geschlossene Aero-Felgen verringern die Ventilationsverluste der Räder. */
+const RIM_DRAG: Record<Car['wheels']['rimDesign'], number> = {
+  steel: 0,
+  'five-spoke': 0,
+  'multi-spoke': 0.002,
+  mesh: 0.003,
+  aero: -0.006,
+};
+
 export function aeroProperties(car: Car, g: CarGeometry): AeroProperties {
   const { shape, morph } = car.model;
   const a = car.aero;
@@ -36,11 +45,13 @@ export function aeroProperties(car: Car, g: CarGeometry): AeroProperties {
     0.02 * (morph.noseHeight - 0.5) +
     0.015 * morph.archFlare +
     { none: 0.03, partial: 0, full: -0.015 }[a.undertray] +
-    0.04 * a.cooling +
+    // Ohne Verbrenner genügen kleine Kühlluftöffnungen (Batterie, Leistungselektronik).
+    (car.powertrain.type === 'electric' ? 0.02 : 0.04) * a.cooling +
     0.04 * a.frontDownforce +
     0.07 * a.rearDownforce +
     0.05 * (car.suspension.rideHeight - 0.14) +
-    0.01 * (tireWidth / 0.225 - 1);
+    0.01 * (tireWidth / 0.225 - 1) +
+    RIM_DRAG[car.wheels.rimDesign];
 
   const underbody = { none: 0, partial: 0.02, full: 0.05 }[a.undertray];
   return {

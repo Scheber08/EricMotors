@@ -169,7 +169,7 @@ Engine (Motor-Bibliothek)                    Car (Auto)
 
 ## 7. Datenbankschema (D1)
 
-Stand nach Migration `0002_password_auth_and_designs.sql`:
+Stand nach Migration `0003_design_powertrain.sql`:
 
 ```sql
 users(id PK, username, username_lower UNIQUE, password_hash, password_salt,
@@ -177,14 +177,15 @@ users(id PK, username, username_lower UNIQUE, password_hash, password_salt,
 designs(id PK, kind CHECK(car|engine), owner_id → users, title, description,
         visibility CHECK(private|unlisted|public), schema_version, version, data_key, thumb_key,
         power_w, torque_nm, mass_kg, accel_s, top_speed_ms, cost_eur,  -- Filter/Karten
-        category, layout, fork_of, like_count, report_count, hidden,
+        category, layout, powertrain, fork_of, like_count, report_count, hidden,
         created_at, updated_at, published_at)
 likes(user_id, design_id, created_at, PK(user_id, design_id))
 reports(design_id, reporter_id, reason, created_at, PK(design_id, reporter_id))
 ```
 
 Indizes: `designs(owner_id, updated_at DESC)`, `designs(kind, visibility, hidden, published_at DESC)`,
-`designs(kind, visibility, hidden, like_count DESC, id)`. Galerie-Pagination per **Keyset**, nie
+`designs(kind, visibility, hidden, like_count DESC, id)`,
+`designs(kind, powertrain, visibility, hidden, published_at DESC)`. Galerie-Pagination per **Keyset**, nie
 `OFFSET`, damit Rows read ≈ Seitengröße. Die Kennzahlen berechnet der Client; der Server prüft nur
 Plausibilitätsgrenzen, die Wahrheit bleibt das Dokument.
 
@@ -252,3 +253,4 @@ Jede Phase endet mit lauffähigem, getestetem Stand auf `main`.
 | 2026-10-23 | Öffentlicher Name **ScheberMotors** (Website, Titel, Open Graph); **EricMotors** bleibt interner Entwicklungsname (Repo, Worker, Pakete)                                                    | beschlossen |
 | 2026-10-23 | Login nur mit Benutzername + Passwort (kein OAuth); Key-Stretching im Browser, Server nur SHA-256 (Free-Plan-CPU)                                                                           | beschlossen |
 | 2026-10-23 | Gemeinsame Tabelle `designs` für Autos und Motoren (Migration 0002), Dokumente als versioniertes JSON in R2                                                                                 | beschlossen |
+| 2026-10-23 | Elektro- und Hybridantrieb (Auto-Schema v2, `powertrain`); E-Motoren und Batterie direkt im Auto, Hybrid = Parallelhybrid inkl. Plug-in                                                     | beschlossen |

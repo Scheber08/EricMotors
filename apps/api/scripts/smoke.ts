@@ -204,6 +204,18 @@ expect(
   r.json.items?.some((d: Json) => d.id === car.id),
   r.json,
 );
+r = await call('GET', `/api/gallery?kind=car&powertrain=ice&minPowerW=${probe + 1}`);
+expect(
+  'Antriebsfilter: Verbrenner gefunden',
+  r.json.items?.some((d: Json) => d.id === car.id && d.powertrain === 'ice'),
+  r.json,
+);
+r = await call('GET', `/api/gallery?kind=car&powertrain=electric&minPowerW=${probe + 1}`);
+expect(
+  'Antriebsfilter: Elektro ohne den Verbrenner',
+  !r.json.items?.some((d: Json) => d.id === car.id),
+  r.json,
+);
 r = await call('GET', `/api/gallery?kind=engine&minPowerW=${probe}`);
 expect(
   'Galerie enthält den privaten Motor nicht',

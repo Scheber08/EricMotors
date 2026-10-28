@@ -15,6 +15,8 @@ export interface DocSummary {
   id: string;
   name: string;
   updatedAt: number;
+  /** Nur Autos: migriertes Dokument für die Vorschau (fehlt, wenn es nicht lesbar ist). */
+  car?: Car;
 }
 
 type Kind = 'car' | 'engine';
@@ -27,6 +29,14 @@ const stores = {
 
 const migrators = { car: migrateCar, engine: migrateEngine } as const;
 
+function previewCar(doc: unknown): Car | undefined {
+  try {
+    return migrateCar(doc);
+  } catch {
+    return undefined;
+  }
+}
+
 async function list(kind: Kind): Promise<DocSummary[]> {
   const store = stores[kind];
   if (!store) return [];
@@ -34,7 +44,12 @@ async function list(kind: Kind): Promise<DocSummary[]> {
   const entries = await Promise.all(ids.map((id) => get<StoredDoc<Car | Engine>>(id, store)));
   return entries
     .filter((e): e is StoredDoc<Car | Engine> => !!e)
-    .map((e) => ({ id: e.doc.id, name: e.doc.meta.name, updatedAt: e.updatedAt }))
+    .map((e) => {
+      const summary: DocSummary = { id: e.doc.id, name: e.doc.meta.name, updatedAt: e.updatedAt };
+      const car = kind === 'car' ? previewCar(e.doc) : undefined;
+      if (car) summary.car = car;
+      return summary;
+    })
     .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 

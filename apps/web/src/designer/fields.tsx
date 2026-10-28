@@ -1,9 +1,10 @@
-import { useId, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import { useLocale, useT } from '../i18n';
 import { getPath } from '../lib/path';
 import { useSettings } from '../state/settings';
 import { type Quantity, unitFor } from '../units/format';
 import { Help } from './Help';
+import { OPTION_ICONS } from './icons';
 
 /**
  * Eingabefelder, die direkt auf einen Pfad im Dokument schreiben. Werte sind immer SI;
@@ -218,6 +219,72 @@ export function SelectField(
         ))}
       </select>
     </Row>
+  );
+}
+
+/**
+ * Auswahl als Karten mit Piktogramm (wie in Automation). Optionen ohne Piktogramm zeigen nur Text;
+ * `badge` liefert optional eine kurze Zusatzangabe je Option (z. B. Kennwert).
+ */
+export function CardField(
+  props: BaseProps & {
+    options: readonly (string | number)[];
+    optionKey?: string;
+    /** Piktogramme je Option; Standard: OPTION_ICONS[iconSet ?? Feldname]. */
+    icons?: Record<string, ReactNode>;
+    iconSet?: string;
+    badge?: (option: string | number) => string | undefined;
+    /** Kleine Karten (nur Text) für viele Optionen. */
+    compact?: boolean;
+    /** Überschreibt das Schreiben in den Pfad (z. B. bei abhängigen Änderungen). */
+    onPick?: (option: string | number) => void;
+  },
+) {
+  const { t, key, hidden, flagged, value } = useField(props);
+  const id = useId();
+  if (hidden) return null;
+  const optionNs = `options.${props.optionKey ?? key}`;
+  const isNumber = typeof props.options[0] === 'number';
+  const icons = props.icons ?? OPTION_ICONS[props.iconSet ?? key.split('.').pop()!];
+  const compact = props.compact ?? !icons;
+  return (
+    <div className={`field${flagged ? ' flagged' : ''}`}>
+      <div className="field-label">
+        <span id={id}>{t(key)}</span>
+        <Help helpKey={key} />
+      </div>
+      <div
+        className={`option-cards${compact ? ' compact' : ''}`}
+        role="radiogroup"
+        aria-labelledby={id}
+      >
+        {props.options.map((o) => {
+          const icon = icons?.[String(o)];
+          const badge = props.badge?.(o);
+          const checked = String(value) === String(o);
+          return (
+            <button
+              key={o}
+              type="button"
+              role="radio"
+              aria-checked={checked}
+              className="option-card"
+              onClick={() =>
+                props.onPick
+                  ? props.onPick(o)
+                  : props.ctx.onChange(props.path, isNumber ? Number(o) : o)
+              }
+            >
+              {icon && <span className="option-icon">{icon}</span>}
+              <span className="option-label">
+                {isNumber && !props.optionKey ? o : t(`${optionNs}.${o}`)}
+              </span>
+              {badge && <span className="option-badge">{badge}</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

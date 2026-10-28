@@ -74,3 +74,6 @@ export const FUELS = {
     pricePerLiter: 1.7,
   },
 } as const satisfies Record<string, FuelData>;
+
+/** Strompreis, €/kWh (Richtwert Deutschland, Mischung Haushalt/Schnelllader). */
+export const ELECTRICITY_PRICE = 0.4;
