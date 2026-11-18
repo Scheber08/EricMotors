@@ -8,6 +8,7 @@ import {
   newEngineFromTemplate,
 } from '../app/templates';
 import { useLocale, useT } from '../i18n';
+import { CloudList } from '../community/CloudList';
 import { type DocSummary, garage, newId } from '../storage/db';
 
 function DocList({
@@ -153,6 +154,8 @@ export function GaragePage() {
         </select>
       </div>
       <DocList kind="engine" items={engines} onChange={refresh} />
+
+      <CloudList onImported={refresh} />
     </main>
   );
 }

@@ -71,20 +71,48 @@ entweder `name` in `wrangler.jsonc` anpassen oder den Worker umbenennen.
 (`routes: [{ pattern: "car.scheber.com", custom_domain: true }]`). Da die Domain bereits im
 Dashboard am Worker hängt, ändert sich nichts. Die Config hält Dashboard und Repo synchron.
 
-### 5. Secrets (ab Phase 2)
+### 5. Secret für den Login (Pflicht ab Phase 2)
 
-Secrets nie committen. Setzen über das Dashboard (**Settings → Variables and Secrets**,
-Typ _Secret_) oder per CLI:
+Der Login (Benutzername + Passwort) signiert Session-Cookies mit `SESSION_SECRET`. Ohne dieses
+Secret zeigt die Website keinen Anmelden-Knopf, der Konfigurator funktioniert trotzdem.
 
-```sh
-# Produktion
-npx wrangler secret put SESSION_SECRET
-npx wrangler secret put GITHUB_CLIENT_SECRET
-# Basis-Secrets für alle neuen Previews
-npx wrangler preview base-config secret put SESSION_SECRET
-```
+1. Einen zufälligen Wert erzeugen, mindestens 32 Zeichen, z. B. mit einem Passwortgenerator oder
+   `openssl rand -hex 32`.
+2. **Workers & Pages → ericmotors → Settings → Variables and Secrets → Add**: Typ **Secret**,
+   Name `SESSION_SECRET`, Wert einfügen, **Deploy**.
+3. Für Previews ein **anderes** Secret setzen (getrennte Sessions):
+   `npx wrangler preview base-config secret put SESSION_SECRET` (gilt für neue Previews).
+4. Prüfen: <https://car.scheber.com/api/health> meldet `"auth": true`.
 
-Lokal stehen Secrets in `.dev.vars` (siehe `.dev.vars.example`, ist in `.gitignore`).
+Ein neues Secret meldet alle Nutzer ab (ihre Cookies werden ungültig), Daten gehen nicht verloren.
+Lokal steht das Secret in `.dev.vars` (siehe `.dev.vars.example`, ist in `.gitignore`).
+
+### Passwort eines Nutzers zurücksetzen (Admin)
+
+Es gibt bewusst keine E-Mail und damit kein „Passwort vergessen“. Der Passwort-Hash ist an den
+Benutzernamen gebunden (der Browser nutzt ihn als Salz). Deshalb legt der Nutzer sein Konto neu an
+und bekommt danach seine Entwürfe übertragen. `name` ist der Benutzername in Kleinbuchstaben;
+alle Befehle in **D1 → ericmotors-prod → Console**.
+
+1. Altes Konto umbenennen, damit der Name frei wird:
+
+   ```sql
+   UPDATE users SET username = username || '_alt', username_lower = username_lower || '_alt'
+     WHERE username_lower = 'name';
+   ```
+
+2. Der Nutzer registriert sich unter `name` mit neuem Passwort.
+3. Entwürfe übertragen und altes Konto löschen:
+
+   ```sql
+   UPDATE designs SET owner_id = (SELECT id FROM users WHERE username_lower = 'name')
+     WHERE owner_id = (SELECT id FROM users WHERE username_lower = 'name_alt');
+   DELETE FROM likes WHERE user_id = (SELECT id FROM users WHERE username_lower = 'name_alt');
+   DELETE FROM reports WHERE reporter_id = (SELECT id FROM users WHERE username_lower = 'name_alt');
+   DELETE FROM users WHERE username_lower = 'name_alt';
+   UPDATE users SET design_count = (SELECT COUNT(*) FROM designs WHERE owner_id = users.id)
+     WHERE username_lower = 'name';
+   ```
 
 ### 6. Erstes Deployment prüfen
 

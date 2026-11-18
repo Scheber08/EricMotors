@@ -169,54 +169,61 @@ Engine (Motor-Bibliothek)                    Car (Auto)
 
 ## 7. Datenbankschema (D1)
 
+Stand nach Migration `0002_password_auth_and_designs.sql`:
+
 ```sql
-users(id TEXT PK, display_name, avatar_url, created_at, vehicle_count INTEGER DEFAULT 0, banned INTEGER DEFAULT 0)
-oauth_accounts(provider, provider_user_id, user_id → users, PK(provider, provider_user_id))
-vehicles(
-  id TEXT PK, owner_id → users, title, description,
-  visibility TEXT CHECK (visibility IN ('private','unlisted','public')),
-  drive_type TEXT,           -- 'ice' | 'bev' | 'hybrid' | 'fcev' | …  (denormalisiert für Filter)
-  power_w REAL, mass_kg REAL, vehicle_class TEXT,
-  tags TEXT,                 -- JSON-Array, Anzeige; Filter über vehicle_tags
-  fork_of TEXT,              -- vehicles.id (kann gelöscht sein)
-  schema_version INTEGER, data_key TEXT, thumb_key TEXT,
-  like_count INTEGER DEFAULT 0, report_count INTEGER DEFAULT 0, hidden INTEGER DEFAULT 0,
-  created_at INTEGER, updated_at INTEGER, published_at INTEGER
-)
-engines(…)                   -- gleiche Struktur wie vehicles, eigene Galerie-Indizes (Migration 0002)
-vehicle_tags(vehicle_id, tag, PK(tag, vehicle_id))
-likes(user_id, vehicle_id, created_at, PK(user_id, vehicle_id))
-reports(id PK, vehicle_id, reporter_id, reason, created_at, UNIQUE(vehicle_id, reporter_id))
+users(id PK, username, username_lower UNIQUE, password_hash, password_salt,
+      session_version, design_count, banned, created_at)
+designs(id PK, kind CHECK(car|engine), owner_id → users, title, description,
+        visibility CHECK(private|unlisted|public), schema_version, version, data_key, thumb_key,
+        power_w, torque_nm, mass_kg, accel_s, top_speed_ms, cost_eur,  -- Filter/Karten
+        category, layout, fork_of, like_count, report_count, hidden,
+        created_at, updated_at, published_at)
+likes(user_id, design_id, created_at, PK(user_id, design_id))
+reports(design_id, reporter_id, reason, created_at, PK(design_id, reporter_id))
 ```
 
-Indizes: `vehicles(owner_id, updated_at DESC)`, `vehicles(visibility, published_at DESC)`,
-`vehicles(visibility, drive_type, published_at DESC)`, `vehicles(visibility, like_count DESC)`.
-Galerie-Pagination per **Keyset** (`published_at < ?`), nie `OFFSET`, damit Rows read ≈ Seitengröße.
-`power_w`, `mass_kg` usw. berechnet der Client; der Server übernimmt sie nur als Filterhilfe
-(Plausibilitätsgrenzen per Zod), die Wahrheit bleibt das Fahrzeug-JSON.
+Indizes: `designs(owner_id, updated_at DESC)`, `designs(kind, visibility, hidden, published_at DESC)`,
+`designs(kind, visibility, hidden, like_count DESC, id)`. Galerie-Pagination per **Keyset**, nie
+`OFFSET`, damit Rows read ≈ Seitengröße. Die Kennzahlen berechnet der Client; der Server prüft nur
+Plausibilitätsgrenzen, die Wahrheit bleibt das Dokument.
 
-R2-Schlüssel: `vehicles/{id}/v{n}.json.gz`, `thumbs/{id}/{n}.webp`.
+R2-Schlüssel: `designs/{id}/v{n}.json`, `thumbs/{id}/v{n}.webp` (alte Versionen werden gelöscht;
+R2-Löschungen sind kostenlos).
 
 ## 8. API (Worker)
 
-| Methode     | Pfad                                     | Cache                         | Zweck                                       |
-| ----------- | ---------------------------------------- | ----------------------------- | ------------------------------------------- |
-| GET         | `/api/health`                            | –                             | Deployment-Check                            |
-| GET         | `/api/auth/:provider/login`, `/callback` | –                             | OAuth                                       |
-| POST        | `/api/auth/logout`                       | –                             | Session löschen                             |
-| GET         | `/api/me`                                | privat                        | Nutzer + Kontingent                         |
-| GET         | `/api/vehicles?mine=1`                   | privat                        | Garage                                      |
-| PUT         | `/api/vehicles/:id`                      | –                             | Speichern (Zod-Validierung, ≤ 512 KB)       |
-| PUT         | `/api/vehicles/:id/thumb`                | –                             | Thumbnail (WebP ≤ 100 KB)                   |
-| DELETE      | `/api/vehicles/:id`                      | –                             | Löschen                                     |
-| GET         | `/api/vehicles/:id`                      | Cache API 5 min (öffentlich)  | Metadaten                                   |
-| GET         | `/api/vehicles/:id/data`                 | immutable (versionierter Key) | Fahrzeug-JSON                               |
-| GET         | `/api/gallery?filter…&cursor`            | Cache API 60 s                | Galerie                                     |
-| POST/DELETE | `/api/vehicles/:id/like`                 | –                             | Likes                                       |
-| POST        | `/api/vehicles/:id/report`               | –                             | Meldung                                     |
-| GET         | `/v/:id`                                 | Cache API 5 min               | SPA-HTML mit Open-Graph-Tags (HTMLRewriter) |
+| Methode     | Pfad                              | Cache                                 | Zweck                                  |
+| ----------- | --------------------------------- | ------------------------------------- | -------------------------------------- |
+| GET         | `/api/health`                     | –                                     | Deployment-Check (inkl. `auth`)        |
+| POST        | `/api/auth/register`, `/login`    | –                                     | Konto anlegen / anmelden               |
+| POST        | `/api/auth/logout`, `/password`   | –                                     | Abmelden / Passwort ändern             |
+| GET, DELETE | `/api/me`                         | privat                                | Nutzer / Konto löschen                 |
+| GET         | `/api/designs`                    | privat                                | eigene Cloud-Entwürfe                  |
+| PUT         | `/api/designs/:id`                | –                                     | Speichern (Zod-Validierung, ≤ 512 KB)  |
+| PUT         | `/api/designs/:id/thumb`          | –                                     | Vorschaubild (WebP ≤ 150 KB)           |
+| DELETE      | `/api/designs/:id`                | –                                     | Löschen                                |
+| GET         | `/api/designs/:id`                | Cache API 60 s (anonym, öffentlich)   | Metadaten                              |
+| GET         | `/api/designs/:id/data?v=`        | immutable (Version im R2-Schlüssel)   | Dokument-JSON                          |
+| GET         | `/api/designs/:id/thumb?v=`       | Cache API 24 h (öffentlich)           | Vorschaubild                           |
+| GET         | `/api/gallery?kind&sort&…&cursor` | Cache API 60 s, kanonischer Schlüssel | Galerie mit Keyset-Pagination          |
+| GET         | `/api/users/:name/designs`        | privat 30 s                           | Profil                                 |
+| POST/DELETE | `/api/designs/:id/like`           | –                                     | Likes                                  |
+| POST        | `/api/designs/:id/report`         | –                                     | Meldung (ab 5 Meldungen ausgeblendet)  |
+| GET         | `/v/:id`                          | Cache API 5 min (öffentlich)          | SPA mit Open-Graph-Tags (HTMLRewriter) |
 
-Jeder schreibende Endpoint: Rate-Limit-Binding (pro Nutzer), Größenlimit, Origin-Prüfung (CSRF).
+Schreibende Endpoints: Rate-Limit-Binding (Nutzer bzw. IP), Größenlimit, Origin-Prüfung (CSRF),
+SameSite=Lax-Cookies. Private Inhalte werden nie in den Cache geschrieben.
+
+### Login ohne serverseitiges Passwort-Hashing
+
+Der Free Plan erlaubt nur ~10 ms CPU pro Request; PBKDF2/bcrypt mit sicheren Parametern braucht
+deutlich mehr. Deshalb wird das Passwort im Browser gestreckt (PBKDF2-SHA-256, 600 000 Runden,
+Salz = Präfix + Benutzername) und nur der abgeleitete Schlüssel übertragen. Der Worker speichert
+`SHA-256(zufälliges Salz ‖ Schlüssel)` (Mikrosekunden). Ein Datenbank-Leak zwingt Angreifer pro
+Rateversuch durch die 600 000 Runden. Sessions sind HMAC-signierte Cookies mit Session-Version
+(Passwortwechsel beendet alle Sessions). Keine E-Mail, daher keine Passwort-Wiederherstellung
+(Admin-Weg in `DEPLOYMENT.md`).
 
 ## 9. Phasenplan
 
@@ -243,3 +250,5 @@ Jede Phase endet mit lauffähigem, getestetem Stand auf `main`.
 | 2026-10-23 | Produktions-Domain `car.scheber.com` (Custom Domain am Worker)                                                                                                                              | beschlossen |
 | 2026-10-23 | Kurswechsel: Bedienung und Logik an _Automation_ angelehnt, spielnah statt ingenieursnah; Motor-Bibliothek (Familie → Varianten), Qualitätsregler, Kosten, Ratings; zunächst nur Verbrenner | beschlossen |
 | 2026-10-23 | Öffentlicher Name **ScheberMotors** (Website, Titel, Open Graph); **EricMotors** bleibt interner Entwicklungsname (Repo, Worker, Pakete)                                                    | beschlossen |
+| 2026-10-23 | Login nur mit Benutzername + Passwort (kein OAuth); Key-Stretching im Browser, Server nur SHA-256 (Free-Plan-CPU)                                                                           | beschlossen |
+| 2026-10-23 | Gemeinsame Tabelle `designs` für Autos und Motoren (Migration 0002), Dokumente als versioniertes JSON in R2                                                                                 | beschlossen |

@@ -8,7 +8,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    proxy: { '/api': api, '/v/': api },
+    proxy: {
+      '/api': { target: api, xfwd: true },
+      '/v/': { target: api, xfwd: true },
+    },
   },
   build: {
     target: 'es2022',

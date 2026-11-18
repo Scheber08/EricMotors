@@ -9,6 +9,8 @@ import { garage, newId } from '../storage/db';
 import { formatQuantity, unitFor } from '../units/format';
 import { useEngineAnalysis } from '../workers/usePhysics';
 import { Chart } from './Chart';
+import { CloudPanel } from './CloudPanel';
+import { engineThumbnail } from './thumbnail';
 import { DesignerShell, type SectionDef } from './DesignerShell';
 import {
   type FieldContext,
@@ -99,6 +101,36 @@ export function EngineDesigner({ id }: { id: string }) {
       onSelect={(s) => setSection(s as Section)}
       history={history}
       saveState={valid ? saveState : 'invalid'}
+      actions={
+        <CloudPanel
+          kind="engine"
+          doc={engine}
+          blocked={
+            !valid || (analysis.result?.warnings.some((w) => w.severity === 'error') ?? true)
+          }
+          stats={
+            analysis.result && {
+              powerW: analysis.result.curve.peakPower.power,
+              torqueNm: analysis.result.curve.peakTorque.torque,
+              massKg: analysis.result.mass,
+              accelS: null,
+              topSpeedMs: null,
+              costEur: analysis.result.cost,
+            }
+          }
+          thumbnail={async () => {
+            const a = analysis.result;
+            if (!a) return null;
+            const kw = Math.round(a.curve.peakPower.power / 1000);
+            const ps = Math.round(a.curve.peakPower.power / 735.49875);
+            return engineThumbnail(
+              a,
+              engine.meta.name,
+              `${kw} kW · ${ps} PS · ${Math.round(a.curve.peakTorque.torque)} N·m`,
+            );
+          }}
+        />
+      }
       toolbar={<VariantTabs engine={engine} index={vIndex} onIndex={setVariantIndex} />}
       center={<EngineOutput analysis={analysis} />}
       params={
@@ -464,7 +496,7 @@ function VariantTabs({
   );
 }
 
-function EngineOutput({ analysis }: { analysis: ReturnType<typeof useEngineAnalysis> }) {
+export function EngineOutput({ analysis }: { analysis: ReturnType<typeof useEngineAnalysis> }) {
   const t = useT();
   const locale = useLocale();
   const units = useSettings((s) => s.units);

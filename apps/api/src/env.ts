@@ -4,8 +4,11 @@ export interface Env {
   BUCKET: R2Bucket;
   ASSETS: Fetcher;
   WRITE_LIMITER: RateLimit;
+  AUTH_LIMITER: RateLimit;
+  /** Secret (wrangler secret put SESSION_SECRET), signiert Session-Cookies. */
+  SESSION_SECRET?: string;
   ENVIRONMENT: 'production' | 'preview' | 'development';
   PUBLIC_ORIGIN: string;
-  MAX_VEHICLES_PER_USER: string;
-  MAX_VEHICLE_BYTES: string;
+  MAX_DESIGNS_PER_USER: string;
+  MAX_DESIGN_BYTES: string;
 }
