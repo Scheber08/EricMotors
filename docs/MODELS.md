@@ -101,7 +101,8 @@ Kompakt ≈ 1350 kg, Muscle Car ≈ 1620 kg, Kombi ≈ 1480 kg (Test ±15 %).
 
 - c_w: Grundwert je Karosserieform (Coupé 0,30 … Pickup 0,42, typische Serienwerte nach
   Hucho 2013) plus Zuschläge für Scheibenneigung, Heckform, Nase, Radläufe, Unterboden, Kühlluft,
-  Flügel, Bodenfreiheit und Reifenbreite.
+  Flügel, Bodenfreiheit, Reifenbreite und Felgendesign (Aero −0,006, Gitter +0,003,
+  Vielspeiche +0,002). Beim Elektroauto zählt die Kühlluftöffnung nur halb.
 - Stirnfläche A ≈ 0,84 · B · H (Hucho 2013). Auftrieb je Achse aus Grundwert, Flügeln und Unterboden.
 - Reifen: Haftbeiwert je Mischung (Öko 0,85 … Slick 1,35) · (Breite/225 mm)^0,1, Rollwiderstand
   je Mischung (0,0075 … 0,016), dynamischer Radius = 0,97 · statischer Radius.
@@ -123,8 +124,59 @@ F_W   = ½ · ρ · c_w · A · v² + f_R · (1 + V/160 km/h) · (m · g + F_Abt
 | Verbrauch              | Mischzyklus 35 % Stadt (50 km/h, 1,2 Stopps/km, 15 % Standzeit), 40 % Land (90 km/h), 25 % Autobahn (120 km/h); höchster sinnvoller Gang; Teillast-Wirkungsgrad des Motors; Zuschlag 1,1                                                              |
 
 Kalibrierung (Test ±15 % Masse/Vmax, ±35 % Beschleunigung, ±25 % Verbrauch): Roadster
-7,7 s / 229 km/h / 6,3 l, Muscle Car 5,9 s / 284 km/h / 10,2 l, Turbo-Kompakter 6,3 s / 253 km/h /
-7,7 l, Diesel-Kombi 9,8 s / 208 km/h / 5,6 l.
+7,7 s / 228 km/h / 6,3 l, Muscle Car 5,9 s / 284 km/h / 10,2 l, Turbo-Kompakter 6,3 s / 253 km/h /
+7,7 l, Diesel-Kombi 10,0 s / 208 km/h / 5,6 l, Elektro-Limousine 3,9 s / 244 km/h / 19,0 kWh /
+413 km, Elektro-Hypercar 2,5 s / 403 km/h / 26,7 kWh, Plug-in-Hybrid 7,4 s / 263 km/h / 1,0 l +
+15,7 kWh / 67 km elektrisch. Für E-Autos dienen Praxiswerte (ADAC Ecotest) als Referenz, weil der
+Mischzyklus schneller als der WLTP ist.
+
+### Antriebseinheiten (`car/drive.ts`)
+
+Jede Vortriebsquelle ist eine Einheit mit Achse, Übersetzungen und Momentenkennlinie:
+
+- **Verbrenner** über das Schaltgetriebe; Achse nach Antriebsart, bei Allrad über das
+  Mitteldifferenzial verteilt (`awdFrontShare`). Ein E-Motor am Getriebe (Parallelhybrid „P2“)
+  addiert sein Moment an der Getriebeeingangswelle.
+- **E-Motoren an Vorder-/Hinterachse** mit fester Untersetzung (Wirkungsgrad 0,97), Drehmassen-
+  koeffizient 0,0008 statt 0,0015.
+
+Pro Achse gilt die Traktionsgrenze μ · Achslast · Ausnutzung. Ausnutzung nach Differenzial
+(offen 0,86, Visko 0,90, Lamellen 0,93, Torsen 0,92, aktiv 0,96; je ein Motor pro Rad 0,97),
+Traktionskontrolle holt 40 %, Launch Control 70 % des Rests. Überschuss einer durchdrehenden Achse
+wird beim Getriebe-Allrad je nach Mitteldifferenzial weitergeleitet (offen 0 … aktiv 1). Die
+elektrische Leistung aller Einheiten ist durch die Batterie begrenzt; der elektrische Kraftanteil
+wird dann anteilig gekürzt.
+
+### E-Motor und Batterie (`electric/`)
+
+| Größe           | Modell                                                                                                         |
+| --------------- | -------------------------------------------------------------------------------------------------------------- |
+| Motorkennlinie  | konstantes Moment bis zur Eckdrehzahl (PMSM 0,33, Asynchron 0,30, Axialfluss 0,40 · n_max), darüber P = konst. |
+| Wirkungsgrad    | Spitze (PMSM 0,96, ASM 0,935, Axialfluss 0,965) − Teillast- und Drehzahlabschlag, · Inverter 0,975             |
+| Dauerleistung   | Anteil der Spitze nach Kühlung (Luft 0,45, Wasser 0,6, Ölsprüh 0,75)                                           |
+| Masse, Kosten   | kW/kg und €/kW je Bauart, plus Inverter und Untersetzung                                                       |
+| Batterie        | Energiedichte und €/kWh je Chemie (LFP, NMC, NCA, Festkörper) × Zellauslegung (Energie/ausgewogen/Leistung)    |
+| Entladeleistung | kWh · C-Rate (Chemie × Zellauslegung × Kühlung); kleine Hybridbatterien erhalten einen Hochleistungsbonus      |
+| Laden 10→80 %   | 0,7 · E / (0,75 · P_Lade), P_Lade = min(C-Rate · E, 150 kW bei 400 V bzw. 300 kW bei 800 V)                    |
+
+### Verbrauch und Reichweite (`car/consumption.ts`)
+
+- **Elektro:** gleicher Mischzyklus; Energie Batterie → Rad über den besten Motor, Rekuperation
+  gewinnt 65 % der Bremsenergie (× Wirkungsgrad hin und zurück), Nebenverbraucher 450 W +
+  Unterhaltung; Zuschlag 1,03; Ladeverluste 1,1. Reichweite = 0,95 · E / Verbrauch.
+- **Hybrid:** Verbrenner-Zyklus ohne Leerlauf (Start-Stopp), Ersparnis h = min(1, P_E / 30 kW):
+  Stadt −40 % · h, Land −12 % · h, Autobahn −5 % · h.
+- **Plug-in:** elektrische Reichweite mit 90 % der Kapazität; Nutzfaktor UF = 1 − exp(−R / 40 km)
+  gewichtet Strom und Kraftstoff (Näherung der WLTP-Kurve).
+- Stromkosten 0,40 €/kWh. CO₂ nur am Auspuff.
+
+### Chassis und Bremsen (`car/chassis.ts`, `car/brakes.ts`)
+
+- **Torsionssteifigkeit** = Grundwert (Monocoque 25, Gitterrohr 18, Leiterrahmen 8 kN·m/°) ×
+  Werkstoff × Karosserieform (Roadster 0,55 …) × 2,7 m / Radstand × Qualität. Wirkt auf
+  Querbeschleunigung, Komfort, Sicherheit und Sportlichkeit.
+- **Bremsfading:** Anzahl Vollbremsungen aus 100 km/h, bis die Scheiben die Fading-Temperatur
+  erreichen (Wärmekapazität der Scheiben, Kühlanteil je Bauart).
 
 ## Auto: Kosten, Ratings, Warnungen (`car/cost.ts`, `car/ratings.ts`)
 
@@ -140,21 +192,26 @@ Kalibrierung (Test ±15 % Masse/Vmax, ±35 % Beschleunigung, ±25 % Verbrauch): 
 | Sportlichkeit   | 0–100, Querbeschleunigung, Bremsweg, Leistungsgewicht, Masse                                       |
 | Komfort         | Federhärte, Dämpfung, Feder-/Dämpferart, Innenraum, Unterhaltung, Laufruhe, Geräusch, Reifenflanke |
 | Sicherheit      | Sicherheitsausstattung, Fahrhilfen, Bremsweg, Masse, Chassisbauart                                 |
-| Praktikabilität | Sitze, Laderaum, Verbrauch, Reichweite                                                             |
+| Praktikabilität | Sitze, Laderaum, Energiekosten je 100 km, Reichweite, Ladezeit                                     |
 | Nutzwert        | Drehmoment, Heck-/Allradantrieb, Leiterrahmen, Karosserieform                                      |
 | Offroad         | Bodenfreiheit, Allrad, Reifen, Starrachsen, Überhänge, Sperre                                      |
-| Zuverlässigkeit | Motor, Getriebeart, Qualität, aufwendige Federung                                                  |
-| Prestige        | Innenraum, Unterhaltung, Werkstoffe, Zylinderzahl, Leistung, Qualität, Lack                        |
+| Zuverlässigkeit | Motor bzw. Batteriehaltbarkeit, Getriebeart, Qualität, aufwendige Federung                         |
+| Prestige        | Innenraum, Unterhaltung, Werkstoffe, Zylinder- bzw. Motorzahl, Leistung, Qualität, Lack            |
+| Umwelt          | CO₂, Schadstoffe des Motors, Energiebedarf, Masse                                                  |
 
 - **Warnungen:** Motor passt nicht (Länge, Breite, Höhe je Einbaulage), Getriebe überlastet,
   erster Gang zu lang, Höchstgeschwindigkeit durch Drehzahl begrenzt, zu viel Leistung für
   Frontantrieb/ohne Traktionskontrolle, Bremsen zu schwach, Überhitzung, Bremsscheibe passt nicht
-  in die Felge, Reifen zu breit, extreme Gewichtsverteilung, starkes Unter-/Übersteuern.
+  in die Felge, Reifen zu breit, extreme Gewichtsverteilung, starkes Unter-/Übersteuern; dazu
+  Batterie begrenzt Motorleistung, kurze Reichweite, Plug-in mit kleiner Batterie, passive Kühlung
+  bei hoher Leistung, langsames Laden, Antriebsart passt nicht zu den Motoren, Vmax durch
+  Motordrehzahl begrenzt, Bremsfading, weiche Karosserie.
 
 ## Simulation (vorbereitet)
 
 `toSimulationInput(car)` liefert flache Daten für eine spätere Fahrsimulation: Masse, Schwerpunkt,
-Gierträgheit, Drehmomentkurve, Übersetzungen, Reifen, Aero-Flächen, Bremskraft, Fahrhilfen.
+Gierträgheit, Antriebseinheiten (Achse, abgetastete Momentkurve inkl. E-Anteil, Übersetzungen),
+Batteriegrenze und -energie, Reifen, Aero-Flächen, Bremskraft, Fahrhilfen.
 
 ## Literatur
 

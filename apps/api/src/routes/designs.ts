@@ -37,6 +37,7 @@ interface DesignRow {
   cost_eur: number;
   category: string | null;
   layout: string | null;
+  powertrain: string | null;
   fork_of: string | null;
   like_count: number;
   hidden: number;
@@ -71,6 +72,7 @@ export function toMeta(r: DesignRow): DesignMeta {
     },
     category: r.category,
     layout: r.layout,
+    powertrain: r.powertrain,
     forkOf: r.fork_of,
     likes: r.like_count,
     thumbVersion: r.thumb_key ? Number(/\/v(\d+)\.webp$/.exec(r.thumb_key)?.[1] ?? 0) : null,
@@ -147,6 +149,7 @@ designs.put('/api/designs/:id', requireUser, async (c) => {
   let description: string;
   let category: string;
   let layout: string;
+  let powertrain: string | null;
   let forkOf: string | null;
   let schemaVersion: number;
   try {
@@ -158,6 +161,7 @@ designs.put('/api/designs/:id', requireUser, async (c) => {
       description = car.meta.description;
       category = car.model.shape;
       layout = car.drivetrain.layout;
+      powertrain = car.powertrain.type;
       forkOf = car.meta.forkOf?.id ?? null;
       schemaVersion = car.schemaVersion;
     } else {
@@ -168,6 +172,7 @@ designs.put('/api/designs/:id', requireUser, async (c) => {
       description = engine.meta.description;
       category = engine.family.layout;
       layout = engine.variants[0]!.fuel;
+      powertrain = null;
       forkOf = engine.meta.forkOf?.id ?? null;
       schemaVersion = engine.schemaVersion;
     }
@@ -212,6 +217,7 @@ designs.put('/api/designs/:id', requireUser, async (c) => {
     stats.costEur,
     category,
     layout,
+    powertrain,
     forkOf,
     now,
     publishedAt,
@@ -221,7 +227,7 @@ designs.put('/api/designs/:id', requireUser, async (c) => {
     await c.env.DB.prepare(
       `UPDATE designs SET title = ?, description = ?, visibility = ?, schema_version = ?, version = ?, data_key = ?,
        power_w = ?, torque_nm = ?, mass_kg = ?, accel_s = ?, top_speed_ms = ?, cost_eur = ?, category = ?, layout = ?,
-       fork_of = ?, updated_at = ?, published_at = ? WHERE id = ?`,
+       powertrain = ?, fork_of = ?, updated_at = ?, published_at = ? WHERE id = ?`,
     )
       .bind(...values, id)
       .run();
@@ -230,8 +236,8 @@ designs.put('/api/designs/:id', requireUser, async (c) => {
     await c.env.DB.batch([
       c.env.DB.prepare(
         `INSERT INTO designs (title, description, visibility, schema_version, version, data_key, power_w, torque_nm, mass_kg,
-         accel_s, top_speed_ms, cost_eur, category, layout, fork_of, updated_at, published_at, id, kind, owner_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         accel_s, top_speed_ms, cost_eur, category, layout, powertrain, fork_of, updated_at, published_at, id, kind, owner_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).bind(...values, id, kind, user.id, now),
       c.env.DB.prepare('UPDATE users SET design_count = design_count + 1 WHERE id = ?').bind(
         user.id,
@@ -353,7 +359,7 @@ designs.get('/api/gallery', async (c) => {
     c,
     60,
     async () => {
-      const { kind, sort, category, layout, minPowerW, maxMassKg, cursor } = q.data;
+      const { kind, sort, category, layout, powertrain, minPowerW, maxMassKg, cursor } = q.data;
       const where = ['d.kind = ?', "d.visibility = 'public'", 'd.hidden = 0'];
       const binds: (string | number)[] = [kind];
       const add = (clause: string, ...values: (string | number)[]) => {
@@ -362,6 +368,7 @@ designs.get('/api/gallery', async (c) => {
       };
       if (category) add('d.category = ?', category);
       if (layout) add('d.layout = ?', layout);
+      if (powertrain) add('d.powertrain = ?', powertrain);
       if (minPowerW !== undefined) add('d.power_w >= ?', minPowerW);
       if (maxMassKg !== undefined) add('d.mass_kg <= ?', maxMassKg);
       // Keyset-Pagination: liest nur so viele Zeilen wie nötig (kein OFFSET).

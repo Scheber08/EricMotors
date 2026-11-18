@@ -9,6 +9,7 @@ import {
 } from '../app/templates';
 import { useLocale, useT } from '../i18n';
 import { CloudList } from '../community/CloudList';
+import { CarSilhouette } from '../designer/car/CarSilhouette';
 import { type DocSummary, garage, newId } from '../storage/db';
 
 function DocList({
@@ -54,6 +55,16 @@ function DocList({
     <div className="grid">
       {items.map((item) => (
         <div key={item.id} className="card doc-card">
+          {item.car && (
+            <Link
+              href={`/car/${item.id}`}
+              className="template-stage"
+              aria-hidden="true"
+              tabIndex={-1}
+            >
+              <CarSilhouette car={item.car} />
+            </Link>
+          )}
           <h3>{item.name}</h3>
           <span className="muted">
             {t('garage.updated', {

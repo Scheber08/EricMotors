@@ -47,7 +47,7 @@ const engine = (
 });
 
 export type EngineTemplateId =
-  'i4-16-na' | 'i4-20-na-sport' | 'i4-20-turbo' | 'v8-50-na' | 'i4-20-diesel';
+  'i4-16-na' | 'i4-20-na-sport' | 'i4-20-turbo' | 'v8-50-na' | 'i4-20-diesel' | 'i4-14-turbo';
 
 export const ENGINE_TEMPLATES: Record<EngineTemplateId, () => Engine> = {
   /** Kompakter 1,6-l-Sauger, 16 V. */
@@ -204,6 +204,37 @@ export const ENGINE_TEMPLATES: Record<EngineTemplateId, () => Engine> = {
         pistons: 'forged',
         crankshaft: 'forged-steel',
         revLimit: rpm(4_800),
+      },
+    ),
+  /** Kompakter 1,4-l-Turbo (Downsizing), Basis für den Plug-in-Hybrid. */
+  'i4-14-turbo': () =>
+    engine(
+      'a0e1b2c3-0006-4000-8000-000000000006',
+      '1.4 Turbo',
+      {
+        layout: 'inline',
+        cylinders: 4,
+        bankAngle: 0,
+        blockMaterial: 'aluminium',
+        headMaterial: 'aluminium',
+        headType: 'dohc',
+        valvesPerCylinder: 4,
+        maxBore: mm(76),
+        maxStroke: mm(82),
+        quality: 0,
+      },
+      {
+        bore: mm(74.5),
+        stroke: mm(80),
+        compressionRatio: 9.6,
+        camProfile: 0.35,
+        aspiration: { kind: 'turbo', count: 1, size: 0.3, boost: bar(1.0), intercooler: 0.7 },
+        fuelSystem: 'direct',
+        conrods: 'forged',
+        pistons: 'forged',
+        crankshaft: 'forged-steel',
+        lambda: 0.9,
+        revLimit: rpm(6_200),
       },
     ),
 };

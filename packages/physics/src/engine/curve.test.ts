@@ -19,6 +19,7 @@ const torqueAt = (c: ReturnType<typeof engineCurve>, speed: number) =>
  */
 const REFERENCES: Record<EngineTemplateId, { power: number; torque: number }> = {
   'i4-16-na': { power: 88e3, torque: 155 },
+  'i4-14-turbo': { power: 110e3, torque: 250 },
   'i4-20-na-sport': { power: 135e3, torque: 205 },
   'i4-20-turbo': { power: 180e3, torque: 350 },
   'v8-50-na': { power: 330e3, torque: 530 },

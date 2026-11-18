@@ -17,7 +17,7 @@ import {
   FieldGroup,
   NumberField,
   QualityField,
-  SelectField,
+  CardField,
   SliderField,
   ToggleField,
 } from './fields';
@@ -137,8 +137,13 @@ export function EngineDesigner({ id }: { id: string }) {
         <>
           {section === 'block' && (
             <FieldGroup title={t('sections.engine.block')}>
-              <SelectField ctx={ctx} path="family.layout" options={['inline', 'v', 'boxer']} />
-              <SelectField
+              <CardField
+                ctx={ctx}
+                path="family.layout"
+                options={['inline', 'v', 'boxer']}
+                iconSet="engineLayout"
+              />
+              <CardField
                 ctx={ctx}
                 path="family.cylinders"
                 options={CYLINDERS_BY_LAYOUT[engine.family.layout]}
@@ -153,20 +158,20 @@ export function EngineDesigner({ id }: { id: string }) {
                   step={Math.PI / 180}
                 />
               )}
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path="family.blockMaterial"
                 options={['cast-iron', 'cgi', 'aluminium', 'aluminium-sleeved', 'magnesium']}
                 optionKey="material"
               />
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path="family.headMaterial"
                 options={['cast-iron', 'aluminium']}
                 optionKey="material"
               />
-              <SelectField ctx={ctx} path="family.headType" options={['ohv', 'sohc', 'dohc']} />
-              <SelectField
+              <CardField ctx={ctx} path="family.headType" options={['ohv', 'sohc', 'dohc']} />
+              <CardField
                 ctx={ctx}
                 path="family.valvesPerCylinder"
                 options={
@@ -214,17 +219,17 @@ export function EngineDesigner({ id }: { id: string }) {
                 max={engine.family.maxStroke}
                 step={mm(0.1)}
               />
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={vp('crankshaft')}
                 options={['cast-iron', 'forged-steel', 'billet-steel']}
               />
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={vp('conrods')}
                 options={['cast', 'heavy-cast', 'forged', 'titanium']}
               />
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={vp('pistons')}
                 options={['cast', 'hypereutectic', 'forged', 'low-friction']}
@@ -260,12 +265,12 @@ export function EngineDesigner({ id }: { id: string }) {
           )}
           {section === 'fuel' && (
             <FieldGroup title={t('sections.engine.fuel')}>
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={vp('fuel')}
                 options={['regular', 'premium', 'super', 'e85', 'diesel']}
               />
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={vp('fuelSystem')}
                 options={[
@@ -283,7 +288,7 @@ export function EngineDesigner({ id }: { id: string }) {
           )}
           {section === 'exhaust' && (
             <FieldGroup title={t('sections.engine.exhaust')}>
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={vp('headers')}
                 options={['cast', 'short-tubular', 'long-tubular', 'equal-length']}
@@ -296,12 +301,12 @@ export function EngineDesigner({ id }: { id: string }) {
                 max={mm(120)}
                 step={mm(1)}
               />
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={vp('catalyst')}
                 options={['none', 'two-way', 'three-way', 'high-flow']}
               />
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={vp('muffler')}
                 options={['none', 'straight-through', 'baffled', 'reverse-flow']}
@@ -370,12 +375,7 @@ function AspirationFields({
       </div>
       {a.kind === 'turbo' && (
         <>
-          <SelectField
-            ctx={ctx}
-            path={vp('aspiration.count')}
-            options={[1, 2]}
-            label="turboCount"
-          />
+          <CardField ctx={ctx} path={vp('aspiration.count')} options={[1, 2]} label="turboCount" />
           <SliderField ctx={ctx} path={vp('aspiration.size')} label="turboSize" />
           <NumberField
             ctx={ctx}
@@ -391,7 +391,7 @@ function AspirationFields({
       )}
       {a.kind === 'supercharger' && (
         <>
-          <SelectField
+          <CardField
             ctx={ctx}
             path={vp('aspiration.type')}
             options={['roots', 'twin-screw', 'centrifugal']}

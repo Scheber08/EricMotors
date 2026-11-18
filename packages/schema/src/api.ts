@@ -41,6 +41,7 @@ export const GalleryQuery = z.object({
   sort: GallerySort.default('recent'),
   category: z.string().max(24).optional(),
   layout: z.string().max(24).optional(),
+  powertrain: z.enum(['ice', 'electric', 'hybrid']).optional(),
   minPowerW: z.coerce.number().min(0).max(3e6).optional(),
   maxMassKg: z.coerce.number().min(0).max(2e4).optional(),
   cursor: z.string().max(80).optional(),
@@ -59,6 +60,8 @@ export interface DesignMeta {
   stats: DesignStats;
   category: string | null;
   layout: string | null;
+  /** Auto: Antriebsart (ice/electric/hybrid); Motor: null. */
+  powertrain: string | null;
   forkOf: string | null;
   likes: number;
   likedByMe?: boolean;

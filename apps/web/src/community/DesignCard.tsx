@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
 import type { DesignMeta } from '@ericmotors/schema';
 import { thumbUrl } from '../api/client';
+import { OPTION_ICONS } from '../designer/icons';
 import { useLocale, useT } from '../i18n';
 import { useSettings } from '../state/settings';
 import { formatQuantity } from '../units/format';
@@ -35,6 +36,12 @@ export function DesignCard({
   return (
     <Link href={`/v/${design.id}`} className="card design-card">
       <div className="design-thumb">
+        {design.powertrain && (
+          <span className={`powertrain-badge ${design.powertrain}`}>
+            {OPTION_ICONS.powertrainType![design.powertrain]}
+            {t(`options.params.car.powertrainType.${design.powertrain}`)}
+          </span>
+        )}
         {thumb ? (
           <img src={thumb} alt="" loading="lazy" width={320} height={180} />
         ) : (

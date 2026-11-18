@@ -1,23 +1,36 @@
-import { CAR_SCHEMA_VERSION, type Car } from '../car';
+import {
+  type Battery,
+  CAR_SCHEMA_VERSION,
+  type Car,
+  type CarEngine,
+  type ElectricMotor,
+} from '../car';
 import type { Engine } from '../engine';
 import { ENGINE_TEMPLATES, type EngineTemplateId } from './engines';
-import { deg, inch, mm } from './units';
+import { deg, inch, mm, rpm } from './units';
 
 /**
  * Auto-Vorlagen als Einstieg. Abmessungen und Übersetzungen an reale Fahrzeuge angelehnt,
  * aber keine Nachbauten.
  */
 
-export type CarTemplateId = 'light-roadster' | 'muscle-car' | 'hot-hatch' | 'diesel-wagon';
+export type CarTemplateId =
+  | 'light-roadster'
+  | 'muscle-car'
+  | 'hot-hatch'
+  | 'diesel-wagon'
+  | 'e-compact'
+  | 'e-hypercar'
+  | 'plugin-hybrid';
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
 /** Baut ein Auto-Motor-Objekt aus einer Motor-Vorlage (erste Variante). */
 export function carEngineFrom(
   engine: Engine,
-  placement: Car['engine']['placement'],
+  placement: CarEngine['placement'],
   variantIndex = 0,
-): Car['engine'] {
+): CarEngine {
   const variant = engine.variants[variantIndex];
   if (!variant) throw new Error('Variante fehlt');
   return {
@@ -65,7 +78,11 @@ export function baseCar(engineTemplate: EngineTemplateId = 'i4-16-na'): Car {
       rearSuspension: 'torsion-beam',
       quality: 0,
     },
-    engine: carEngineFrom(ENGINE_TEMPLATES[engineTemplate](), 'front-transverse'),
+    powertrain: {
+      type: 'ice',
+      engine: carEngineFrom(ENGINE_TEMPLATES[engineTemplate](), 'front-transverse'),
+      motors: [],
+    },
     trim: {
       bodyMaterial: 'galvanised-steel',
       interior: 'standard',
@@ -145,7 +162,7 @@ function lightRoadster(): Car {
     frontSuspension: 'double-wishbone',
     rearSuspension: 'multi-link',
   };
-  c.engine = carEngineFrom(ENGINE_TEMPLATES['i4-20-na-sport'](), 'front-longitudinal');
+  c.powertrain.engine = carEngineFrom(ENGINE_TEMPLATES['i4-20-na-sport'](), 'front-longitudinal');
   c.trim = { ...c.trim, interior: 'sport', seats: 2, entertainment: 'radio' };
   c.drivetrain = {
     ...c.drivetrain,
@@ -206,7 +223,7 @@ function muscleCar(): Car {
     },
     rearSuspension: 'multi-link',
   };
-  c.engine = carEngineFrom(ENGINE_TEMPLATES['v8-50-na'](), 'front-longitudinal');
+  c.powertrain.engine = carEngineFrom(ENGINE_TEMPLATES['v8-50-na'](), 'front-longitudinal');
   c.trim = { ...c.trim, interior: 'premium', seats: 4 };
   c.drivetrain = {
     ...c.drivetrain,
@@ -301,9 +318,210 @@ function dieselWagon(): Car {
   return c;
 }
 
+const kwh = (x: number) => x * 3.6e6;
+const kw = (x: number) => x * 1000;
+
+const motor = (
+  id: string,
+  position: ElectricMotor['position'],
+  peakKw: number,
+  extra: Partial<ElectricMotor> = {},
+): ElectricMotor => ({
+  id,
+  position,
+  count: 1,
+  type: 'pmsm',
+  peakPower: kw(peakKw),
+  maxSpeed: rpm(18_000),
+  reduction: 9,
+  cooling: 'liquid',
+  quality: 0,
+  ...extra,
+});
+
+const battery = (capacityKwh: number, extra: Partial<Battery> = {}): Battery => ({
+  chemistry: 'nmc',
+  cells: 'balanced',
+  capacity: kwh(capacityKwh),
+  voltage: '400V',
+  cooling: 'liquid',
+  quality: 0,
+  ...extra,
+});
+
+/** Elektro-Limousine mit zwei Motoren (Allrad), angelehnt an die Model-3-Klasse. */
+function eCompact(): Car {
+  const c = baseCar();
+  c.id = '6f1c2a3e-0005-4000-8000-000000000005';
+  c.meta.name = 'E-Kompakt';
+  c.model = {
+    ...c.model,
+    shape: 'sedan',
+    dimensions: {
+      length: 4.69,
+      width: 1.85,
+      height: 1.44,
+      wheelbase: 2.875,
+      overhangFront: 0.84,
+      trackFront: 0.86,
+      trackRear: 0.86,
+    },
+    morph: {
+      ...c.model.morph,
+      noseHeight: 0.2,
+      hoodHeight: 0.3,
+      windshieldRake: 0.85,
+      roofLength: 0.55,
+      rearSlope: 0.85,
+    },
+    rearSuspension: 'multi-link',
+    frontSuspension: 'double-wishbone',
+  };
+  c.powertrain = {
+    type: 'electric',
+    motors: [motor('rear', 'rear', 220), motor('front', 'front', 150, { type: 'induction' })],
+    battery: battery(75),
+  };
+  c.drivetrain = { ...c.drivetrain, layout: 'awd', awdFrontShare: 0.4 };
+  c.trim = { ...c.trim, interior: 'premium', entertainment: 'premium-infotainment' };
+  c.wheels = {
+    ...c.wheels,
+    rimDiameter: inch(18),
+    rimDesign: 'aero',
+    tireType: 'touring',
+    front: { width: 0.235, aspectRatio: 0.45 },
+    rear: { width: 0.235, aspectRatio: 0.45 },
+  };
+  c.brakes.front = { type: 'vented-disc', diameter: mm(320), pistons: 2 };
+  c.aero = { ...c.aero, undertray: 'full', cooling: 0.15 };
+  c.paint.base = {
+    color: '#f4f4f4',
+    finish: 'pearl',
+    flake: 0.4,
+    pearlColor: '#d9e2ff',
+    clearcoat: 0.9,
+  };
+  return c;
+}
+
+/** Elektro-Hypercar mit vier Motoren (Torque Vectoring), angelehnt an den Rimac Nevera. */
+function eHypercar(): Car {
+  const c = baseCar();
+  c.id = '6f1c2a3e-0006-4000-8000-000000000006';
+  c.meta.name = 'E-Hypercar';
+  c.model = {
+    ...c.model,
+    shape: 'coupe',
+    dimensions: {
+      length: 4.75,
+      width: 1.99,
+      height: 1.21,
+      wheelbase: 2.75,
+      overhangFront: 1.0,
+      trackFront: 0.85,
+      trackRear: 0.85,
+    },
+    morph: {
+      ...c.model.morph,
+      noseHeight: 0.15,
+      hoodHeight: 0.15,
+      windshieldRake: 0.9,
+      roofLength: 0.3,
+      rearSlope: 0.85,
+      archFlare: 0.6,
+      frontTaper: 0.7,
+    },
+    chassis: 'monocoque',
+    chassisMaterial: 'cfrp',
+    frontSuspension: 'double-wishbone',
+    rearSuspension: 'double-wishbone',
+  };
+  c.powertrain = {
+    type: 'electric',
+    motors: [
+      motor('front', 'front', 290, { count: 2, reduction: 6, maxSpeed: rpm(19_000) }),
+      motor('rear', 'rear', 360, {
+        count: 2,
+        reduction: 6,
+        maxSpeed: rpm(19_000),
+        type: 'axial-flux',
+      }),
+    ],
+    battery: battery(120, { chemistry: 'nca', cells: 'power', voltage: '800V' }),
+  };
+  c.drivetrain = { ...c.drivetrain, layout: 'awd', awdFrontShare: 0.45, differential: 'active' };
+  c.trim = {
+    ...c.trim,
+    bodyMaterial: 'cfrp',
+    interior: 'sport',
+    seats: 2,
+    entertainment: 'infotainment',
+    assists: { abs: true, tcs: true, esc: true, launchControl: true },
+  };
+  c.suspension = {
+    ...c.suspension,
+    dampers: 'adaptive',
+    antiRoll: 'active',
+    rideHeight: 0.1,
+    front: { ...c.suspension.front, springStiffness: 0.7 },
+    rear: { ...c.suspension.rear, springStiffness: 0.7 },
+  };
+  c.wheels = {
+    ...c.wheels,
+    rimDiameter: inch(20),
+    rimMaterial: 'forged',
+    rimDesign: 'multi-spoke',
+    tireType: 'semi-slick',
+    front: { width: 0.275, aspectRatio: 0.35 },
+    rear: { width: 0.315, aspectRatio: 0.3 },
+  };
+  c.brakes = {
+    ...c.brakes,
+    front: { type: 'carbon-ceramic', diameter: mm(390), pistons: 6 },
+    rear: { type: 'carbon-ceramic', diameter: mm(390), pistons: 6 },
+    pads: 'race',
+    bias: 0.6,
+  };
+  c.aero = { frontDownforce: 0.4, rearDownforce: 0.4, undertray: 'full', cooling: 0.5 };
+  c.paint.base = { color: '#0b3d91', finish: 'metallic', flake: 0.7, clearcoat: 0.95 };
+  return c;
+}
+
+/** Plug-in-Hybrid: 1,4-Turbo mit E-Motor am Getriebe, angelehnt an den Golf GTE. */
+function pluginHybrid(): Car {
+  const c = baseCar('i4-14-turbo');
+  c.id = '6f1c2a3e-0007-4000-8000-000000000007';
+  c.meta.name = 'Plug-in-Hybrid';
+  c.powertrain = {
+    type: 'hybrid',
+    engine: c.powertrain.engine!,
+    motors: [motor('p2', 'gearbox', 85, { maxSpeed: rpm(7_000) })],
+    battery: battery(13, { cells: 'power' }),
+    hybrid: { plugIn: true },
+  };
+  c.drivetrain = {
+    ...c.drivetrain,
+    gearbox: 'dct',
+    ratios: [3.46, 2.05, 1.3, 0.9, 0.77, 0.65],
+    finalDrive: 4.12,
+  };
+  c.wheels = {
+    ...c.wheels,
+    rimDiameter: inch(17),
+    front: { width: 0.225, aspectRatio: 0.45 },
+    rear: { width: 0.225, aspectRatio: 0.45 },
+  };
+  c.brakes.front = { type: 'vented-disc', diameter: mm(312), pistons: 1 };
+  c.paint.base = { color: '#1f6feb', finish: 'metallic', flake: 0.5, clearcoat: 0.9 };
+  return c;
+}
+
 export const CAR_TEMPLATES: Record<CarTemplateId, () => Car> = {
   'light-roadster': lightRoadster,
   'muscle-car': muscleCar,
   'hot-hatch': hotHatch,
   'diesel-wagon': dieselWagon,
+  'e-compact': eCompact,
+  'e-hypercar': eHypercar,
+  'plugin-hybrid': pluginHybrid,
 };

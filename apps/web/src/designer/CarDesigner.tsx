@@ -1,21 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import type { CarAnalysis } from '@ericmotors/physics';
-import {
-  BodyShape,
-  Car,
-  type CarEngine,
-  ENGINE_TEMPLATES,
-  type Engine,
-  type EngineTemplateId,
-  carEngineFrom,
-} from '@ericmotors/schema';
-import { ENGINE_TEMPLATE_IDS } from '../app/templates';
+import { type CarAnalysis, energyCostPer100km } from '@ericmotors/physics';
+import { BodyShape, Car } from '@ericmotors/schema';
 import { useLocale, useT } from '../i18n';
 import { setPath } from '../lib/path';
 import { useCarDocument, useHistory } from '../state/document';
 import { useSettings } from '../state/settings';
-import { type DocSummary, garage, newId } from '../storage/db';
+import { garage } from '../storage/db';
 import { formatQuantity, unitFor } from '../units/format';
 import { useCarAnalysis } from '../workers/usePhysics';
 import { Chart } from './Chart';
@@ -24,24 +15,28 @@ import { captureViewer } from './thumbnail';
 import { DesignerShell, type SectionDef } from './DesignerShell';
 import { normalizeCar, setGearCount } from './carNormalize';
 import type { ViewMode } from './car/CarViewer';
+import type { CameraView } from './car/camera';
+import { ViewerControls } from './car/ViewerControls';
 import {
   ColorField,
   type FieldContext,
   FieldGroup,
   NumberField,
   QualityField,
-  SelectField,
+  CardField,
   SliderField,
   ToggleField,
 } from './fields';
-import { RatingBars, Stat, WarningList } from './Stats';
+import { Stat, WarningList } from './Stats';
+import { Donut, Gauge, RatingRadar } from './Graphics';
 import { useAutosave } from './useAutosave';
+import { PowertrainSection } from './car/PowertrainSection';
 
 const CarViewer = lazy(() => import('./car/CarViewer').then((m) => ({ default: m.CarViewer })));
 
 const SECTIONS = [
   'model',
-  'engine',
+  'powertrain',
   'trim',
   'drivetrain',
   'suspension',
@@ -59,7 +54,7 @@ const deg = (x: number) => (x * Math.PI) / 180;
 /** Abschnitt, zu dem eine Warnung gehört (aus dem Pfad). */
 function sectionOf(path: string): Section {
   const head = path.split('.')[0]!;
-  if (head === 'engine') return 'engine';
+  if (head === 'engine' || head === 'powertrain') return 'powertrain';
   if (head === 'aero') return 'aero';
   return (SECTIONS as readonly string[]).includes(head) ? (head as Section) : 'model';
 }
@@ -72,6 +67,11 @@ export function CarDesigner({ id }: { id: string }) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'missing'>('loading');
   const [section, setSection] = useState<Section>('model');
   const [view, setView] = useState<ViewMode>('normal');
+  const [camera, setCamera] = useState<{ view: CameraView; key: number }>({
+    view: 'three-quarter',
+    key: 0,
+  });
+  const [autoRotate, setAutoRotate] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -137,8 +137,8 @@ export function CarDesigner({ id }: { id: string }) {
           }
           stats={
             analysis.result && {
-              powerW: analysis.result.engine.curve.peakPower.power,
-              torqueNm: analysis.result.engine.curve.peakTorque.torque,
+              powerW: analysis.result.powertrain.systemPower,
+              torqueNm: analysis.result.engine?.curve.peakTorque.torque ?? 0,
               massKg: analysis.result.mass.total,
               accelS: analysis.result.performance.accel0to100,
               topSpeedMs: analysis.result.performance.topSpeed,
@@ -156,9 +156,18 @@ export function CarDesigner({ id }: { id: string }) {
                 car={car}
                 analysis={analysis.result}
                 mode={view}
+                camera={camera.view}
+                cameraKey={camera.key}
+                autoRotate={autoRotate}
                 onSelect={(s) => setSection(s as Section)}
               />
             </Suspense>
+            <ViewerControls
+              camera={camera.view}
+              onCamera={(v) => setCamera((c) => ({ view: v, key: c.key + 1 }))}
+              autoRotate={autoRotate}
+              onAutoRotate={setAutoRotate}
+            />
             <div className="viewer-modes segmented" role="group" aria-label={t('designer.view')}>
               {(['normal', 'xray', 'exploded'] as const).map((m) => (
                 <button key={m} type="button" aria-pressed={view === m} onClick={() => setView(m)}>
@@ -175,12 +184,22 @@ export function CarDesigner({ id }: { id: string }) {
           />
         </div>
       }
-      params={<CarParams section={section} car={car} ctx={ctx} />}
+      params={<CarParams section={section} car={car} ctx={ctx} analysis={analysis.result} />}
     />
   );
 }
 
-function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: FieldContext }) {
+function CarParams({
+  section,
+  car,
+  ctx,
+  analysis,
+}: {
+  section: Section;
+  car: Car;
+  ctx: FieldContext;
+  analysis: CarAnalysis | undefined;
+}) {
   const t = useT();
   const { update } = useCarDocument.getState();
   const dt = car.drivetrain;
@@ -189,7 +208,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
       return (
         <>
           <FieldGroup title={t('sections.car.model')}>
-            <SelectField ctx={ctx} path="model.shape" options={BodyShape.options} />
+            <CardField ctx={ctx} path="model.shape" options={BodyShape.options} />
             <NumberField
               ctx={ctx}
               path="model.dimensions.length"
@@ -242,24 +261,24 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
             ))}
           </FieldGroup>
           <FieldGroup title={t('designer.chassis')}>
-            <SelectField
+            <CardField
               ctx={ctx}
               path="model.chassis"
               options={['monocoque', 'ladder', 'spaceframe']}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="model.chassisMaterial"
               options={['steel', 'galvanised-steel', 'aluminium', 'cfrp']}
               optionKey="bodyMaterial"
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="model.frontSuspension"
               options={['solid-axle', 'macpherson', 'double-wishbone', 'pushrod']}
               optionKey="suspensionType"
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="model.rearSuspension"
               options={[
@@ -276,38 +295,38 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
           </FieldGroup>
         </>
       );
-    case 'engine':
-      return <EngineSection car={car} ctx={ctx} />;
+    case 'powertrain':
+      return <PowertrainSection car={car} ctx={ctx} analysis={analysis} />;
     case 'trim':
       return (
         <FieldGroup title={t('sections.car.trim')}>
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.bodyMaterial"
             options={['steel', 'galvanised-steel', 'aluminium', 'fibreglass', 'cfrp']}
             optionKey="bodyMaterial"
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.interior"
             options={['basic', 'standard', 'premium', 'luxury', 'sport', 'race']}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.seats"
             options={car.model.shape === 'roadster' ? [1, 2] : [1, 2, 3, 4, 5, 6, 7, 8, 9]}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.entertainment"
             options={['none', 'radio', 'infotainment', 'premium-infotainment']}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.safety"
             options={['basic', 'standard', 'advanced', 'modern']}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="trim.powerSteering"
             options={['none', 'hydraulic', 'electric']}
@@ -322,9 +341,9 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
     case 'drivetrain':
       return (
         <FieldGroup title={t('sections.car.drivetrain')}>
-          <SelectField ctx={ctx} path="drivetrain.layout" options={['fwd', 'rwd', 'awd']} />
+          <CardField ctx={ctx} path="drivetrain.layout" options={['fwd', 'rwd', 'awd']} />
           {dt.layout === 'awd' && <SliderField ctx={ctx} path="drivetrain.awdFrontShare" />}
-          <SelectField
+          <CardField
             ctx={ctx}
             path="drivetrain.gearbox"
             options={['manual', 'automatic', 'dct', 'sequential', 'cvt']}
@@ -368,7 +387,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
             max={7}
             step={0.01}
           />
-          <SelectField
+          <CardField
             ctx={ctx}
             path="drivetrain.differential"
             options={['open', 'viscous', 'plate-lsd', 'torsen', 'active']}
@@ -380,17 +399,17 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
       return (
         <>
           <FieldGroup title={t('sections.car.suspension')}>
-            <SelectField
+            <CardField
               ctx={ctx}
               path="suspension.springs"
               options={['passive', 'progressive', 'hydropneumatic', 'air']}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="suspension.dampers"
               options={['twin-tube', 'mono-tube', 'adaptive']}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="suspension.antiRoll"
               options={['none', 'passive', 'active']}
@@ -426,7 +445,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
       return (
         <>
           <FieldGroup title={t('sections.car.wheels')}>
-            <SelectField
+            <CardField
               ctx={ctx}
               path="wheels.tireType"
               options={['eco', 'touring', 'sport', 'semi-slick', 'slick', 'all-terrain', 'offroad']}
@@ -439,12 +458,12 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
               max={inch(22)}
               step={inch(1)}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="wheels.rimMaterial"
               options={['steel', 'alloy', 'forged', 'magnesium', 'cfrp']}
             />
-            <SelectField
+            <CardField
               ctx={ctx}
               path="wheels.rimDesign"
               options={['steel', 'five-spoke', 'multi-spoke', 'mesh', 'aero']}
@@ -470,7 +489,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
       return (
         <>
           <FieldGroup title={t('sections.car.brakes')}>
-            <SelectField
+            <CardField
               ctx={ctx}
               path="brakes.pads"
               options={['organic', 'semi-metallic', 'ceramic', 'race']}
@@ -480,9 +499,10 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
           </FieldGroup>
           {(['front', 'rear'] as const).map((axle) => (
             <FieldGroup key={axle} title={t(`designer.${axle}`)}>
-              <SelectField
+              <CardField
                 ctx={ctx}
                 path={`brakes.${axle}.type`}
+                iconSet="brakeType"
                 options={['drum', 'solid-disc', 'vented-disc', 'carbon-ceramic']}
               />
               <NumberField
@@ -493,7 +513,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
                 max={0.42}
                 step={mm(2)}
               />
-              <SelectField ctx={ctx} path={`brakes.${axle}.pistons`} options={[1, 2, 4, 6, 8]} />
+              <CardField ctx={ctx} path={`brakes.${axle}.pistons`} options={[1, 2, 4, 6, 8]} />
             </FieldGroup>
           ))}
         </>
@@ -503,7 +523,7 @@ function CarParams({ section, car, ctx }: { section: Section; car: Car; ctx: Fie
         <FieldGroup title={t('sections.car.aero')}>
           <SliderField ctx={ctx} path="aero.frontDownforce" />
           <SliderField ctx={ctx} path="aero.rearDownforce" />
-          <SelectField ctx={ctx} path="aero.undertray" options={['none', 'partial', 'full']} />
+          <CardField ctx={ctx} path="aero.undertray" options={['none', 'partial', 'full']} />
           <SliderField ctx={ctx} path="aero.cooling" />
         </FieldGroup>
       );
@@ -519,7 +539,7 @@ function PaintSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
   const layerFields = (prefix: string, finish: string) => (
     <>
       <ColorField ctx={ctx} path={`${prefix}.color`} />
-      <SelectField
+      <CardField
         ctx={ctx}
         path={`${prefix}.finish`}
         options={finishes}
@@ -587,165 +607,6 @@ function PaintSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
   );
 }
 
-/** Motorwahl: aus der eigenen Motor-Bibliothek oder einer Vorlage, plus Einbaulage. */
-function EngineSection({ car, ctx }: { car: Car; ctx: FieldContext }) {
-  const t = useT();
-  const locale = useLocale();
-  const { update } = useCarDocument.getState();
-  const [library, setLibrary] = useState<DocSummary[]>([]);
-  const [selected, setSelected] = useState<Engine | undefined>();
-  useEffect(() => {
-    void garage.listEngines().then(setLibrary);
-  }, []);
-  useEffect(() => {
-    const engineId = car.engine.source?.engineId;
-    if (!engineId) return;
-    void garage.loadEngine(engineId).then(setSelected);
-  }, [car.engine.source?.engineId]);
-
-  const install = (engine: Engine, variantId: string) => {
-    const index = Math.max(
-      0,
-      engine.variants.findIndex((v) => v.id === variantId),
-    );
-    update((d) => {
-      d.engine = carEngineFrom(engine, d.engine.placement, index);
-    });
-  };
-  const onPick = async (value: string) => {
-    if (value.startsWith('template:')) {
-      const engine = ENGINE_TEMPLATES[value.slice(9) as EngineTemplateId]();
-      install(engine, engine.variants[0]!.id);
-      setSelected(undefined);
-    } else if (value) {
-      const engine = await garage.loadEngine(value);
-      if (engine) {
-        setSelected(engine);
-        install(engine, engine.variants[0]!.id);
-      }
-    }
-  };
-  const libraryVariant = selected?.variants.find((v) => v.id === car.engine.source?.variantId);
-  const fam = car.engine.family;
-  const liters = (
-    (Math.PI / 4) *
-    car.engine.variant.bore ** 2 *
-    car.engine.variant.stroke *
-    fam.cylinders *
-    1000
-  ).toFixed(1);
-  const summary = `${t('designer.engineSummary', {
-    layout: t(`options.params.engine.layout.${fam.layout}`),
-    cylinders: fam.cylinders,
-    liters: Number(liters).toLocaleString(locale, { minimumFractionDigits: 1 }),
-  })} · ${car.engine.variant.name}`;
-  const adopt = async () => {
-    const engine: Engine = {
-      schemaVersion: 1,
-      kind: 'engine',
-      id: newId(),
-      meta: { name: t('designer.engineOf', { name: car.meta.name }), description: '', tags: [] },
-      family: structuredClone(car.engine.family),
-      variants: [structuredClone(car.engine.variant)],
-    };
-    await garage.saveEngine(engine);
-    setSelected(engine);
-    setLibrary(await garage.listEngines());
-    update((d) => (d.engine.source = { engineId: engine.id, variantId: engine.variants[0]!.id }));
-  };
-  const outdated =
-    !!libraryVariant && JSON.stringify(libraryVariant) !== JSON.stringify(car.engine.variant);
-
-  return (
-    <FieldGroup title={t('sections.car.engine')}>
-      <div className="engine-summary card">
-        <strong>{selected?.meta.name ?? t('designer.embeddedEngine')}</strong>
-        <span className="muted">{summary}</span>
-        {!selected && (
-          <button type="button" className="btn small" onClick={() => void adopt()}>
-            {t('designer.adoptEngine')}
-          </button>
-        )}
-        {car.engine.source && selected && (
-          <Link className="btn small" href={`/engine/${selected.id}`}>
-            {t('designer.editEngine')}
-          </Link>
-        )}
-        {outdated && selected && (
-          <button
-            type="button"
-            className="btn small primary"
-            onClick={() => install(selected, libraryVariant.id)}
-          >
-            {t('designer.updateEngine')}
-          </button>
-        )}
-      </div>
-      <div className="field">
-        <div className="field-label">
-          <label htmlFor="engine-pick">{t('designer.chooseEngine')}</label>
-        </div>
-        <select
-          id="engine-pick"
-          className="select"
-          value=""
-          onChange={(e) => void onPick(e.target.value)}
-        >
-          <option value="">…</option>
-          {library.length > 0 && (
-            <optgroup label={t('garage.engines')}>
-              {library.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          <optgroup label={t('home.templates')}>
-            {ENGINE_TEMPLATE_IDS.map((id) => (
-              <option key={id} value={`template:${id}`}>
-                {t(`templates.engine.${id}`)}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-      </div>
-      {selected && selected.variants.length > 1 && (
-        <div className="field">
-          <div className="field-label">
-            <label htmlFor="variant-pick">{t('designer.variants')}</label>
-          </div>
-          <select
-            id="variant-pick"
-            className="select"
-            value={car.engine.source?.variantId}
-            onChange={(e) => install(selected, e.target.value)}
-          >
-            {selected.variants.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      <SelectField
-        ctx={ctx}
-        path="engine.placement"
-        options={
-          [
-            'front-longitudinal',
-            'front-transverse',
-            'mid-longitudinal',
-            'mid-transverse',
-            'rear-longitudinal',
-          ] satisfies CarEngine['placement'][]
-        }
-      />
-    </FieldGroup>
-  );
-}
-
 export function CarOutput({
   car,
   analysis,
@@ -784,62 +645,120 @@ export function CarOutput({
     return {
       x: grid.map((v) => speedUnit.toDisplay(v)),
       unit: speedUnit.unit,
-      gears: analysis.performance.traction.map((pts) => grid.map((v) => interp(pts, v))),
+      curves: analysis.performance.traction.map((c) => ({
+        label:
+          c.unit === 'motor'
+            ? t('charts.motorCurve', {
+                axle: t(`designer.${c.axle === 'front' ? 'front' : 'rear'}`),
+              })
+            : car.drivetrain.gearbox === 'cvt'
+              ? 'CVT'
+              : `${c.gear}.`,
+        color: c.unit !== 'motor' ? '--chart-1' : c.axle === 'front' ? '--chart-5' : '--chart-2',
+        values: grid.map((v) => interp(c.points, v)),
+      })),
       resistance: grid.map((v) => interp(analysis.performance.resistance, v)),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analysis, units, power]);
+  }, [analysis, units, power, t]);
 
   if (!analysis || !traction)
     return <div className="output muted">{error ?? t('common.calculating')}</div>;
   const p = analysis.performance;
+  const ps = analysis.powertrain;
   const f = (
     v: number | null | undefined,
     q: Parameters<typeof formatQuantity>[1],
     digits?: number,
   ) => formatQuantity(v, q, uc, locale, digits);
-  const powerToMass = analysis.engine.curve.peakPower.power / analysis.mass.total;
+  const powerToMass = ps.systemPower / analysis.mass.total;
   const pwUnit = unitFor('power', uc);
   const massUnit = unitFor('mass', uc);
   const groups = analysis.mass.items.reduce<Record<string, number>>(
     (acc, i) => ({ ...acc, [i.group]: (acc[i.group] ?? 0) + i.mass }),
     {},
   );
+  const kmh = 3.6;
+  const hasFuel = p.fuelPerDistance > 0;
+  const hasElectric = p.electricPerDistance > 0;
+  const costPer100 = energyCostPer100km(car, p);
+  const tone = ps.type === 'electric' ? 'electric' : ps.type === 'hybrid' ? 'battery' : 'ice';
 
   return (
     <div className="output">
-      <div className="stats">
-        <Stat
+      <div className="gauges">
+        <Gauge
           label={t('stats.car.power')}
-          value={f(analysis.engine.curve.peakPower.power, 'power')}
-          hint={f(analysis.engine.curve.peakTorque.torque, 'torque')}
+          value={f(ps.systemPower, 'power')}
+          hint={analysis.engine ? f(analysis.engine.curve.peakTorque.torque, 'torque') : undefined}
+          fraction={Math.log(ps.systemPower / 40e3) / Math.log(1500e3 / 40e3)}
+          tone={tone}
         />
+        <Gauge
+          label={t('stats.car.accel')}
+          value={f(p.accel0to100, 'time')}
+          hint={units === 'imperial' ? '0–62 mph' : '0–100 km/h'}
+          fraction={(16 - (p.accel0to100 ?? 16)) / 14}
+        />
+        <Gauge
+          label={t('stats.car.topSpeed')}
+          value={f(p.topSpeed, 'speed')}
+          fraction={(p.topSpeed * kmh - 100) / 350}
+        />
+        <Gauge
+          label={t('stats.car.range')}
+          value={f(p.range, 'longDistance')}
+          hint={
+            p.electricRange !== null && ps.type === 'hybrid'
+              ? t('stats.car.electricRange', { value: f(p.electricRange, 'longDistance') })
+              : undefined
+          }
+          fraction={p.range / 1000e3}
+          tone={ps.type === 'ice' ? 'ice' : 'battery'}
+        />
+      </div>
+      <div className="stats">
+        {hasFuel && (
+          <Stat
+            label={t('stats.car.consumption')}
+            value={f(p.fuelPerDistance, 'consumption')}
+            hint={f(p.co2PerDistance, 'co2')}
+          />
+        )}
+        {hasElectric && (
+          <Stat
+            label={t('stats.car.electricConsumption')}
+            value={f(p.electricPerDistance, 'electricConsumption')}
+            hint={t('stats.car.fromGrid')}
+          />
+        )}
+        {p.chargeTime !== null && (
+          <Stat
+            label={t('stats.car.chargeTime')}
+            value={f(p.chargeTime, 'minutes')}
+            hint={t('stats.car.chargeHint', { power: f(ps.chargePower, 'power') })}
+          />
+        )}
         <Stat
           label={t('stats.car.mass')}
           value={f(analysis.mass.total, 'mass')}
           hint={`${Math.round(analysis.mass.frontWeightShare * 100)} : ${Math.round((1 - analysis.mass.frontWeightShare) * 100)}`}
         />
         <Stat
-          label={t('stats.car.accel')}
-          value={f(p.accel0to100, 'time')}
-          hint={units === 'imperial' ? '0–62 mph' : '0–100 km/h'}
-        />
-        <Stat label={t('stats.car.topSpeed')} value={f(p.topSpeed, 'speed')} />
-        <Stat
           label={t('stats.car.braking')}
           value={f(p.braking100to0, 'distance')}
-          hint={units === 'imperial' ? '62–0 mph' : '100–0 km/h'}
+          hint={t('stats.car.fade', { stops: p.fadeStops })}
         />
         <Stat label={t('stats.car.lateral')} value={f(p.lateralAcceleration, 'acceleration')} />
-        <Stat
-          label={t('stats.car.consumption')}
-          value={f(p.fuelPerDistance, 'consumption')}
-          hint={f(p.co2PerDistance, 'co2')}
-        />
         <Stat
           label={t('stats.car.cost')}
           value={f(analysis.cost.total, 'money')}
           hint={t('stats.car.running', { value: f(analysis.runningCost, 'money') })}
+        />
+        <Stat
+          label={t('stats.car.energyCost')}
+          value={`${costPer100.toLocaleString(locale, { maximumFractionDigits: 2, minimumFractionDigits: 2 })} €`}
+          hint={t('stats.car.per100km')}
         />
         {engineer && (
           <Stat
@@ -853,6 +772,12 @@ export function CarOutput({
             value={`${analysis.aero.dragCoefficient.toFixed(3)} · ${analysis.aero.frontalArea.toFixed(2)} m²`}
           />
         )}
+        {engineer && (
+          <Stat
+            label={t('stats.car.stiffness')}
+            value={`${Math.round((analysis.torsionalStiffness * Math.PI) / 180 / 1000).toLocaleString(locale)} kN·m/°`}
+          />
+        )}
         {engineer && <Stat label={t('stats.car.quarterMile')} value={f(p.quarterMile, 'time')} />}
         {engineer && (
           <Stat
@@ -861,7 +786,16 @@ export function CarOutput({
             hint={units === 'imperial' ? '50–75 mph' : '80–120 km/h'}
           />
         )}
-        {engineer && <Stat label={t('stats.car.range')} value={f(p.range, 'longDistance')} />}
+      </div>
+      <div className="output-columns">
+        <section className="panel">
+          <h3>{t('designer.ratings')}</h3>
+          <RatingRadar ratings={{ ...analysis.ratings }} ns="ratings.car" />
+        </section>
+        <section className="panel">
+          <h3>{t('designer.warnings')}</h3>
+          <WarningList warnings={analysis.warnings} onSelect={(w) => onWarning(w.path)} />
+        </section>
       </div>
       <Chart
         title={t('charts.traction')}
@@ -872,10 +806,10 @@ export function CarOutput({
         formatX={(v) => Math.round(v).toString()}
         formatY={(v) => v.toFixed(1)}
         series={[
-          ...traction.gears.map((values, i) => ({
-            label: car.drivetrain.gearbox === 'cvt' ? 'CVT' : `${i + 1}.`,
-            color: '--chart-2',
-            values,
+          ...traction.curves.map((c) => ({
+            label: c.label,
+            color: c.color,
+            values: c.values,
             width: 1.5,
           })),
           {
@@ -886,33 +820,20 @@ export function CarOutput({
           },
         ]}
       />
-      <div className="output-columns">
-        <section>
-          <h3>{t('designer.ratings')}</h3>
-          <RatingBars ratings={{ ...analysis.ratings }} ns="ratings.car" />
-        </section>
-        <section>
-          <h3>{t('designer.warnings')}</h3>
-          <WarningList warnings={analysis.warnings} onSelect={(w) => onWarning(w.path)} />
-        </section>
-      </div>
-      {engineer && (
-        <section>
-          <h3>{t('designer.massBreakdown')}</h3>
-          <table className="table">
-            <tbody>
-              {Object.entries(groups)
-                .sort((a, b) => b[1] - a[1])
-                .map(([g, m]) => (
-                  <tr key={g}>
-                    <td>{t(`massGroups.${g}`)}</td>
-                    <td className="num">{f(m, 'mass')}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </section>
-      )}
+      <section className="panel">
+        <h3>{t('designer.massBreakdown')}</h3>
+        <Donut
+          parts={Object.entries(groups).map(([g, m]) => ({
+            key: g,
+            label: t(`massGroups.${g}`),
+            value: m,
+          }))}
+          center={f(analysis.mass.total, 'mass')}
+          centerLabel={t('stats.car.mass')}
+          otherLabel={t('massGroups.misc')}
+          format={(v) => f(v, 'mass')}
+        />
+      </section>
     </div>
   );
 }

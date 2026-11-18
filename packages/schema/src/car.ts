@@ -7,7 +7,7 @@ import { Color, Id, Meta, Quality, bounded, slider } from './primitives';
  * Modell → Motor → Ausstattung → Antriebsstrang → Fahrwerk → Räder → Bremsen → Aero → Lack.
  */
 
-export const CAR_SCHEMA_VERSION = 1;
+export const CAR_SCHEMA_VERSION = 2;
 
 // ---------- Modell (Karosserie und Chassis) ----------
 
@@ -95,6 +95,61 @@ export const CarEngine = z.object({
   placement: EnginePlacement,
 });
 export type CarEngine = z.infer<typeof CarEngine>;
+
+// ---------- Elektrischer Antrieb (direkt im Auto konfiguriert) ----------
+
+/**
+ * Einbauort eines E-Motors: an der Vorder- bzw. Hinterachse mit eigener Untersetzung oder
+ * (nur Hybrid) am Getriebeeingang zwischen Verbrenner und Getriebe („P2“).
+ */
+export const MotorPosition = z.enum(['front', 'rear', 'gearbox']);
+export type MotorPosition = z.infer<typeof MotorPosition>;
+
+export const ElectricMotor = z.object({
+  id: Id,
+  position: MotorPosition,
+  /** 1 = ein Motor mit Differenzial, 2 = je Rad ein Motor (Torque Vectoring). */
+  count: z.number().int().min(1).max(2),
+  type: z.enum(['pmsm', 'induction', 'axial-flux']),
+  /** Spitzenleistung je Motor, W. */
+  peakPower: bounded(5e3, 1.5e6),
+  /** Höchstdrehzahl, rad/s. */
+  maxSpeed: bounded(500, 3_200),
+  /** Untersetzung Motor → Rad (bei Position „gearbox“ ohne Bedeutung, dort zählt das Getriebe). */
+  reduction: bounded(3, 15),
+  cooling: z.enum(['air', 'liquid', 'oil-spray']),
+  quality: Quality,
+});
+export type ElectricMotor = z.infer<typeof ElectricMotor>;
+
+export const Battery = z.object({
+  chemistry: z.enum(['lfp', 'nmc', 'nca', 'solid-state']),
+  /** Zellauslegung: Energiezellen (leicht, träge) ↔ Leistungszellen (hohe C-Rate, schwerer, teurer). */
+  cells: z.enum(['energy', 'balanced', 'power']),
+  /** Nutzbarer Energieinhalt, J (75 kWh = 2,7e8 J). */
+  capacity: bounded(1e6, 1e9),
+  voltage: z.enum(['400V', '800V']),
+  cooling: z.enum(['passive', 'air', 'liquid']),
+  quality: Quality,
+});
+export type Battery = z.infer<typeof Battery>;
+
+export const PowertrainType = z.enum(['ice', 'electric', 'hybrid']);
+export type PowertrainType = z.infer<typeof PowertrainType>;
+
+/**
+ * Antrieb des Autos. Verbrenner kommen aus der Motor-Bibliothek (Kopie), E-Motoren und Batterie
+ * werden direkt hier eingestellt. Hybrid = Parallelhybrid (E-Motor am Getriebe oder an einer Achse),
+ * optional als Plug-in mit großer Batterie.
+ */
+export const Powertrain = z.object({
+  type: PowertrainType,
+  engine: CarEngine.optional(),
+  motors: z.array(ElectricMotor).max(4),
+  battery: Battery.optional(),
+  hybrid: z.object({ plugIn: z.boolean() }).optional(),
+});
+export type Powertrain = z.infer<typeof Powertrain>;
 
 // ---------- Ausstattung ----------
 
@@ -261,7 +316,7 @@ const CarObject = z.object({
   id: z.uuid(),
   meta: Meta,
   model: Model,
-  engine: CarEngine,
+  powertrain: Powertrain,
   trim: Trim,
   drivetrain: Drivetrain,
   suspension: Suspension,
@@ -272,6 +327,27 @@ const CarObject = z.object({
 });
 
 export const Car = CarObject.superRefine((c, ctx) => {
+  const pt = c.powertrain;
+  const issue = (path: (string | number)[], message: string) =>
+    ctx.addIssue({ code: 'custom', path: ['powertrain', ...path], message });
+  const needsEngine = pt.type !== 'electric';
+  const needsElectric = pt.type !== 'ice';
+  if (needsEngine && !pt.engine) issue(['engine'], 'Verbrenner fehlt');
+  if (!needsEngine && pt.engine) issue(['engine'], 'Elektroauto ohne Verbrenner');
+  if (needsElectric && pt.motors.length === 0) issue(['motors'], 'mindestens ein E-Motor nötig');
+  if (needsElectric && !pt.battery) issue(['battery'], 'Batterie fehlt');
+  if (!needsElectric && (pt.motors.length > 0 || pt.battery))
+    issue(['motors'], 'Verbrenner ohne E-Antrieb');
+  if (pt.type !== 'hybrid' && pt.hybrid) issue(['hybrid'], 'Hybrid-Einstellungen nur beim Hybrid');
+  pt.motors.forEach((m, i) => {
+    if (m.position === 'gearbox' && pt.type !== 'hybrid')
+      issue(['motors', i, 'position'], 'Getriebe-E-Motor nur beim Hybrid');
+  });
+  if (pt.motors.filter((m) => m.position === 'gearbox').length > 1)
+    issue(['motors'], 'höchstens ein Getriebe-E-Motor');
+  const ids = new Set(pt.motors.map((m) => m.id));
+  if (ids.size !== pt.motors.length) issue(['motors'], 'doppelte Motor-IDs');
+
   const d = c.model.dimensions;
   if (d.overhangFront + d.wheelbase > d.length - 0.3) {
     ctx.addIssue({

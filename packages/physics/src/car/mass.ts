@@ -1,6 +1,9 @@
 import type { Car } from '@ericmotors/schema';
 import { FUELS } from '../constants';
+import { batteryMass } from '../electric/battery';
+import { motorMass, unitPeakPower } from '../electric/motor';
 import type { EngineAnalysis } from '../engine/analyze';
+import { discMass } from './brakes';
 import { type CarGeometry, tireDiameter } from './geometry';
 
 /**
@@ -13,6 +16,8 @@ export type MassGroup =
   | 'body'
   | 'glass'
   | 'engine'
+  | 'motors'
+  | 'battery'
   | 'drivetrain'
   | 'suspension'
   | 'wheels'
@@ -48,7 +53,7 @@ export interface MassProperties {
 }
 
 export function engineX(car: Car, g: CarGeometry): number {
-  switch (car.engine.placement) {
+  switch (car.powertrain.engine?.placement ?? 'front-transverse') {
     case 'front-transverse':
       return 0.12;
     case 'front-longitudinal':
@@ -61,7 +66,11 @@ export function engineX(car: Car, g: CarGeometry): number {
   }
 }
 
-export function massProperties(car: Car, g: CarGeometry, engine: EngineAnalysis): MassProperties {
+export function massProperties(
+  car: Car,
+  g: CarGeometry,
+  engine: EngineAnalysis | undefined,
+): MassProperties {
   const items: MassItem[] = [];
   const add = (group: MassGroup, mass: number, x: number, z: number) =>
     items.push({ group, mass, x, z });
@@ -104,21 +113,39 @@ export function massProperties(car: Car, g: CarGeometry, engine: EngineAnalysis)
   add('body', 11 * vol * shapeBody * panelMat, centerX, g.rideHeight + 0.55 * g.height);
   add('glass', (25 + 3 * vol) * (model.shape === 'roadster' ? 0.5 : 1), cabinX, 0.8 * g.height);
 
-  // Motor und Antriebsstrang
+  // Antrieb: Verbrenner mit Getriebe, E-Motoren, Batterie
+  const pt = car.powertrain;
   const ex = engineX(car, g);
-  add('engine', engine.mass, ex, g.rideHeight + 0.35);
-  const gears = dt.ratios.length;
-  const gearbox = {
-    manual: 38 + 3 * Math.max(0, gears - 5),
-    automatic: 65 + 3 * Math.max(0, gears - 6),
-    dct: 75,
-    sequential: 45,
-    cvt: 65,
-  }[dt.gearbox];
-  const awd = dt.layout === 'awd' ? 55 : 0;
-  const propShaft = dt.layout === 'rwd' && car.engine.placement.startsWith('front') ? 15 : 0;
-  const diff = { open: 0, viscous: 4, 'plate-lsd': 4, torsen: 5, active: 10 }[dt.differential];
-  add('drivetrain', gearbox + awd + propShaft + diff, ex - 0.4, g.rideHeight + 0.25);
+  if (pt.engine && engine) {
+    add('engine', engine.mass, ex, g.rideHeight + 0.35);
+    const gears = dt.ratios.length;
+    const gearbox = {
+      manual: 38 + 3 * Math.max(0, gears - 5),
+      automatic: 65 + 3 * Math.max(0, gears - 6),
+      dct: 75,
+      sequential: 45,
+      cvt: 65,
+    }[dt.gearbox];
+    const awd = dt.layout === 'awd' ? 55 : 0;
+    const propShaft = dt.layout === 'rwd' && pt.engine.placement.startsWith('front') ? 15 : 0;
+    const diff = { open: 0, viscous: 4, 'plate-lsd': 4, torsen: 5, active: 10 }[dt.differential];
+    add('drivetrain', gearbox + awd + propShaft + diff, ex - 0.4, g.rideHeight + 0.25);
+  }
+  for (const mo of pt.motors) {
+    const x = mo.position === 'front' ? 0 : mo.position === 'rear' ? rearX : ex - 0.45;
+    add('motors', motorMass(mo), x, g.rideHeight + 0.22);
+  }
+  if (pt.battery) {
+    // Elektroauto: flache Batterie im Unterboden zwischen den Achsen; Hybrid: unter/hinter der Rückbank.
+    const floor = pt.type === 'electric';
+    const cooling = { passive: 0, air: 8, liquid: 15 }[pt.battery.cooling] * (floor ? 1 : 0.5);
+    add(
+      'battery',
+      batteryMass(pt.battery) + cooling,
+      floor ? -g.wheelbase / 2 : rearX + 0.35,
+      g.rideHeight + (floor ? 0.08 : 0.3),
+    );
+  }
 
   // Fahrwerk
   const front = { 'solid-axle': 70, macpherson: 45, 'double-wishbone': 55, pushrod: 50 }[
@@ -168,9 +195,7 @@ export function massProperties(car: Car, g: CarGeometry, engine: EngineAnalysis)
     [b.front, 0],
     [b.rear, rearX],
   ] as const) {
-    const disc =
-      { drum: 7, 'solid-disc': 5, 'vented-disc': 7, 'carbon-ceramic': 3.5 }[brake.type] *
-      Math.pow(brake.diameter / 0.3, 2);
+    const disc = discMass(brake);
     add('brakes', 2 * (disc + 2 + 0.5 * brake.pistons), x, 0.3);
   }
 
@@ -188,21 +213,34 @@ export function massProperties(car: Car, g: CarGeometry, engine: EngineAnalysis)
   add('equipment', equipment, cabinX * 0.6, g.rideHeight + 0.45);
 
   // Kraftstoff (90 % Tankfüllung), Abgas, Kühlung, Elektrik, Aero, Sonstiges
-  const fuel = FUELS[car.engine.variant.fuel];
-  add('fuel', 0.9 * g.tankVolume * fuel.density + 8, rearX + 0.4, g.rideHeight + 0.2);
-  const pipes = car.engine.family.layout !== 'inline' && car.engine.family.cylinders >= 6 ? 1.6 : 1;
-  add(
-    'exhaust',
-    (15 + 200 * car.engine.variant.exhaustDiameter) * pipes,
-    (ex + rearX) / 2,
-    g.rideHeight + 0.05,
-  );
-  add(
-    'cooling',
-    8 + 25 * (engine.curve.peakPower.power / 300e3) + 5 * aero.cooling,
-    ex + 0.5,
-    g.rideHeight + 0.35,
-  );
+  if (pt.engine && engine) {
+    const fuel = FUELS[pt.engine.variant.fuel];
+    add('fuel', 0.9 * g.tankVolume * fuel.density + 8, rearX + 0.4, g.rideHeight + 0.2);
+    const pipes = pt.engine.family.layout !== 'inline' && pt.engine.family.cylinders >= 6 ? 1.6 : 1;
+    add(
+      'exhaust',
+      (15 + 200 * pt.engine.variant.exhaustDiameter) * pipes,
+      (ex + rearX) / 2,
+      g.rideHeight + 0.05,
+    );
+    add(
+      'cooling',
+      8 + 25 * (engine.curve.peakPower.power / 300e3) + 5 * aero.cooling,
+      ex + 0.5,
+      g.rideHeight + 0.35,
+    );
+  } else {
+    const electricPeak = pt.motors.reduce((a, mo) => a + unitPeakPower(mo), 0);
+    add(
+      'cooling',
+      8 + 10 * (electricPeak / 300e3) + 5 * aero.cooling,
+      g.overhangFront - 0.3,
+      g.rideHeight + 0.35,
+    );
+  }
+  // Hochvoltleitungen und Ladetechnik bei Elektro und Hybrid.
+  if (pt.type !== 'ice')
+    add('electrical', pt.type === 'electric' ? 30 : 15, centerX, g.rideHeight + 0.2);
   add('electrical', 25 + 3 * vol, centerX, g.rideHeight + 0.4);
   add(
     'aero',

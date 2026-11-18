@@ -13,6 +13,8 @@ import { AuthDialog } from '../community/AuthDialog';
 import { apiErrorMessage } from '../community/errors';
 import { CarOutput } from '../designer/CarDesigner';
 import { EngineOutput } from '../designer/EngineDesigner';
+import type { CameraView } from '../designer/car/camera';
+import { ViewerControls } from '../designer/car/ViewerControls';
 import { useLocale, useT } from '../i18n';
 import { useAuth } from '../state/auth';
 import { garage, newId } from '../storage/db';
@@ -217,6 +219,12 @@ export function DesignPage({ id }: { id: string }) {
 
 function CarDetail({ car }: { car: Car }) {
   const analysis = useCarAnalysis(car);
+  const [camera, setCamera] = useState<{ view: CameraView; key: number }>({
+    view: 'three-quarter',
+    key: 0,
+  });
+  // In der Galerie dreht sich das Auto zunächst von selbst.
+  const [autoRotate, setAutoRotate] = useState(true);
   return (
     <div className="car-center">
       <div className="viewer">
@@ -225,9 +233,18 @@ function CarDetail({ car }: { car: Car }) {
             car={car}
             analysis={analysis.result}
             mode="normal"
+            camera={camera.view}
+            cameraKey={camera.key}
+            autoRotate={autoRotate}
             onSelect={() => undefined}
           />
         </Suspense>
+        <ViewerControls
+          camera={camera.view}
+          onCamera={(v) => setCamera((c) => ({ view: v, key: c.key + 1 }))}
+          autoRotate={autoRotate}
+          onAutoRotate={setAutoRotate}
+        />
       </div>
       <CarOutput
         car={car}

@@ -8,7 +8,12 @@ import { ENGINE_SCHEMA_VERSION, Engine } from './engine';
 type Migration = (raw: Record<string, unknown>) => Record<string, unknown>;
 
 export const CAR_MIGRATIONS: Record<number, Migration> = {
-  // 1: (raw) => ({ ...raw, schemaVersion: 2, neuesFeld: standardwert }),
+  // v1 → v2: Antrieb als Union (Verbrenner/Elektro/Hybrid); der bisherige Motor wird zum Verbrenner.
+  1: ({ engine, ...rest }) => ({
+    ...rest,
+    schemaVersion: 2,
+    powertrain: { type: 'ice', engine, motors: [] },
+  }),
 };
 export const ENGINE_MIGRATIONS: Record<number, Migration> = {};
 
